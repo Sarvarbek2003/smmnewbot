@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users{
+  id Int @id @default(autoincrement())
+  chat_id BigInt @unique
+  steep Json?
+  action Json?
+  full_name String
+  username String?
+  is_block Boolean @default(false)
+  balance Float @default(0)
+  partners Int @default(0)
+  card_num String?
+  cardDate String?
+  verify Int?
+  summa Int?
+  group_partners Int @default(0)
+  created_ad DateTime
+}
+
+model setting{ 
+  id Int @id @default(autoincrement())
+  chanell_id String?
+  chanell_username String?
+  kurs Float?
+  partner_price Int?
+  bot_username String?
+  admin String?
+  admin_id BigInt? @unique
+  group_partner_sum String?
+  balance Float?
+  bot_is_on Boolean @default(true)
+}
+
+model categories {
+  id Int @id @default(autoincrement())
+  name String
+  info Json?
+  status String @default("working")
+}
+
+model partners {
+  id Int @id @default(autoincrement())
+  category_id Int 
+  name String
+  info Json?
+  status String @default("working")
+}
+
+model services {
+  id Int @id @default(autoincrement())
+  service_id Int?
+  name String
+  price Float
+  min Int
+  max Int
+  time String?
+  status String @default("working")
+  partner_id Int 
+  refill Boolean @default(false)
+  cancel Boolean @default(false)
+  feild Json?
+  info Json?
+  type String?
+}
+
+model orders {
+  id Int @id @default(autoincrement())
+  order_id Int?
+  chat_id BigInt?
+  link String?
+  price Float?
+  start_count Int?
+  status String?
+  count Int?
+  ready_count Int?
+  created_at DateTime
+  service_name String?
+  service_id Int
+}
