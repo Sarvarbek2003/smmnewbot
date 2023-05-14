@@ -74,6 +74,7 @@ bot.on('text', async msg => {
         let request_id = 100000 + Math.random() * 900000 | 0
         let category_button = await rederCategoryKeyboard(request_id)
         action.request_id = request_id
+        action.feild_steep = 0
         await prisma.users.update({where: {chat_id}, data: {
             steep: ['home', 'setorder'],
             action
@@ -105,14 +106,20 @@ bot.on('callback_query', async msg => {
     if (request_id != action.request_id) return  bot.answerCallbackQuery(msg.id, { text:"Ushbu tugmadan endi foydalana olmaysiz"});
     if(data === StatusTypes.WORKING ) return bot.answerCallbackQuery(msg.id, { text:"Ushbu xizmatda texnik ishlar olib borilmoqda", show_alert: true});
     
-    if(data == ButtonType.back){
+    if(data === ButtonType.back){
         if(action.back == CancelButtonType.select) return 
         steep.pop()
         await prisma.users.update({where: {chat_id}, data:{steep}})
         return cancelClick(user, msg)
+    } else if (data === ButtonType.setOrder){
+        console.log('salom', data);
+        
+        return await setOrder(bot, undefined, user)
+    } else if (data === ButtonType.cancelOrder){
+        return bot.answerCallbackQuery(msg.id, { text:"Bu xizmatga buyurtma qilish uchun xisobingizda mablag` yetmaydi", show_alert: true});
     }
 
-    if(steep[1] == SteepTypes.setOrder){
+    else if(steep[1] == SteepTypes.setOrder){
         await setOrders(bot, msg, user, renderPartnerKeyboard, renderServices, getOneService)
     } 
 })

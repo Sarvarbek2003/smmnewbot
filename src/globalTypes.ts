@@ -1,6 +1,8 @@
 enum ButtonType {
     back =  'back',
-    cancel = 'cancel'
+    cancel = 'cancel',
+    setOrder = 'setorder',
+    cancelOrder = 'cancelorder'
 }
 
 enum SteepTypes {

@@ -55,9 +55,9 @@ export default async(
             reply_markup: services_keyboard
         })
     } else if (last_steep === SteepTypes.getservices){
-        let getOneServiceData = await getOneService(Number(data), action.request_id)
+        let getOneServiceData = await getOneService(Number(data), action.request_id, user)
         if(!getOneServiceData.isActive) return bot.answerCallbackQuery(msg.id, { text:"Ushbu xizmatda texnik ishlar olib borilmoqda", show_alert: true});
-        steep.push(SteepTypes.setLink)
+        steep.push(SteepTypes.setOrder)
         action.back = CancelButtonType.renderOneService
         action.oneservice_id = Number(data)
 
@@ -69,6 +69,7 @@ export default async(
         })
         
         bot.editMessageText(getOneServiceData.text, {
+            parse_mode: 'Markdown',
             chat_id,
             message_id:msg.message?.message_id,
             reply_markup: getOneServiceData.keyboard

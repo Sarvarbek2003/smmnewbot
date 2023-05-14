@@ -1,4 +1,4 @@
-import { PrismaClient, services, setting } from "@prisma/client";
+import { PrismaClient, services, setting, users } from "@prisma/client";
 const prisma = new PrismaClient();
 
 enum StatusTypes {
@@ -80,19 +80,28 @@ const renderServices = async (partner_id: string, request_id:number) => {
     }
 }
 
-const getOneService = async (service_id:number, request_id:number) => {
+const getOneService = async (service_id:number, request_id:number, user:users | undefined) => {
     try {
         let getOneService:services | null = await prisma.services.findUnique({where: {id:service_id}})
 
         let info:any = new Object(getOneService?.info)
-        let text = `💵 1000 ta - ${getOneService?.price}\n💵 Min - ${getOneService?.min}\n📈 Max - ${getOneService?.max}\n`+
-        `⏰ Qo'shilish vaqti - ${getOneService?.time}\n♻ Qayta tiklash - ${getOneService?.refill ? 'Mavjud':'Mavjud emas'}\n\n${info.uz}`
+        let min = getOneService?.min || 1000
+        
+        let allCount = Number(user?.balance || 0) / (Number(getOneService!.price || 0) / 1000) 
+        
+        let text = `💵 1000 ta - *${getOneService?.price}* so'm\n📉 Min - *${getOneService?.min}*\n📈 Max - *${getOneService?.max}*\n`+
+        `⏰ Qo'shilish vaqti - *${getOneService?.time}*\n♻ Qayta tiklash - *${getOneService?.refill ? 'Mavjud':'Mavjud emas'}*\n\n`+
+        `💹 *Sizning pulingiz ${allCount.toFixed(0)} ta uchun yetadi*\n\n`+
+        `_${info.uz}_`
 
         return {
             isActive: true,
             text: text,
             keyboard: {
-                inline_keyboard: [[{text: "🔙 Ortga", callback_data: request_id+'=back'}]]
+                inline_keyboard: [
+                    allCount > min ? [{text: "🏷 Buyurtma berish", callback_data: request_id+'=setorder'}]:[{text: "🏷 Buyurtma berish", callback_data: request_id+'=cancelorder'}],
+                    [{text: "🔙 Ortga", callback_data: request_id+'=back'}]
+                ]
             }
         }
     } catch (error) {

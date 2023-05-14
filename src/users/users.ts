@@ -35,11 +35,11 @@ const getUserByMessage = async (msg: TelegramBot.Message | TelegramBot.CallbackQ
                 created_ad: new Date()
             }
         })
-        console.log("getUser new_user", {user: new_user, new_user: true});
+        // console.log("getUser new_user", {user: new_user, new_user: true});
         return {user: new_user, new_user: true}
     } 
 
-    console.log("getUser is_user", {user: is_user, new_user: false});
+    // console.log("getUser is_user", {user: is_user, new_user: false});
     return {
         user: is_user, 
         new_user: false
