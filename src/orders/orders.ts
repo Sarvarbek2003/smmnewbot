@@ -19,13 +19,15 @@ export default async(
     const first_name:string = msg.from!.first_name
     let action:any = new Object(user!.action)
 
+
     let steep = new Array(user!.steep).flat()
     let last_steep = steep[steep.length-1]
 
     if (last_steep === SteepTypes.setOrder) {
         let partner_keyboard = await renderPartnerKeyboard(data, action.request_id)
+        if (!partner_keyboard.inline_keyboard.length) return
         steep.push(SteepTypes.getpartner)
-        action.back = CancelButtonType.renderPartnerBtn
+        action.back = CancelButtonType.renderCategoryBtn
         action.partner_id = Number(data)
         await prisma.users.update({where:{chat_id},
             data:{
@@ -33,13 +35,14 @@ export default async(
                 steep: steep
             }
         })
-        bot.editMessageText( "✅ Buyurtma turini tanlang", {
+        bot.editMessageText( "✅ Buyurtma turini tanlang " +new Date().toLocaleTimeString(), {
             chat_id,
             message_id: msg.message?.message_id,
             reply_markup: partner_keyboard
         })
     } else if (last_steep === SteepTypes.getpartner){
         let services_keyboard = await renderServices(data, action.request_id)
+        if (!services_keyboard.inline_keyboard.length) return
         steep.push(SteepTypes.getservices)
         action.back = CancelButtonType.renderPartnerBtn
         action.service_id = Number(data)
@@ -49,13 +52,14 @@ export default async(
                 steep: steep
             }
         })
-        bot.editMessageText( "✅ Xizmat turini tanlang\nNarxi 1000 ta uchun UZSda ko'rsatilgan ", {
+        bot.editMessageText( "✅ Xizmat turini tanlang\nNarxi 1000 ta uchun UZSda ko'rsatilgan "+new Date().toLocaleTimeString(), {
             chat_id,
             message_id: msg.message?.message_id,
             reply_markup: services_keyboard
         })
     } else if (last_steep === SteepTypes.getservices){
         let getOneServiceData = await getOneService(Number(data), action.request_id, user)
+        if(getOneServiceData.keyboard.length) return
         if(!getOneServiceData.isActive) return bot.answerCallbackQuery(msg.id, { text:"Ushbu xizmatda texnik ishlar olib borilmoqda", show_alert: true});
         steep.push(SteepTypes.setOrder)
         action.back = CancelButtonType.renderOneService

@@ -87,11 +87,14 @@ const getOneService = async (service_id:number, request_id:number, user:users | 
         let info:any = new Object(getOneService?.info)
         let min = getOneService?.min || 1000
         
-        let allCount = Number(user?.balance || 0) / (Number(getOneService!.price || 0) / 1000) 
+        let maxCount = Number(user?.balance || 0) / (Number(getOneService!.price || 0) / 1000) 
+        let action:any = new Object(user!.action)
+        action.maxCount = maxCount
+        await prisma.users.update({where: {chat_id: Number(user?.chat_id)}, data:{action}})
         
         let text = `💵 1000 ta - *${getOneService?.price}* so'm\n📉 Min - *${getOneService?.min}*\n📈 Max - *${getOneService?.max}*\n`+
         `⏰ Qo'shilish vaqti - *${getOneService?.time}*\n♻ Qayta tiklash - *${getOneService?.refill ? 'Mavjud':'Mavjud emas'}*\n\n`+
-        `💹 *Sizning pulingiz ${allCount.toFixed(0)} ta uchun yetadi*\n\n`+
+        `💹 *Sizning pulingiz ${maxCount.toFixed(0)} ta uchun yetadi*\n\n`+
         `_${info.uz}_`
 
         return {
@@ -99,7 +102,7 @@ const getOneService = async (service_id:number, request_id:number, user:users | 
             text: text,
             keyboard: {
                 inline_keyboard: [
-                    allCount > min ? [{text: "🏷 Buyurtma berish", callback_data: request_id+'=setorder'}]:[{text: "🏷 Buyurtma berish", callback_data: request_id+'=cancelorder'}],
+                    maxCount > min ? [{text: "🏷 Buyurtma berish", callback_data: request_id+'=setorder'}]:[{text: "🏷 Buyurtma berish", callback_data: request_id+'=cancelorder'}],
                     [{text: "🔙 Ortga", callback_data: request_id+'=back'}]
                 ]
             }

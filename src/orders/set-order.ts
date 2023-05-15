@@ -1,5 +1,6 @@
 import {PrismaClient, users } from "@prisma/client";
 import TelegramBot from "node-telegram-bot-api";
+import { CancelButtonType } from "./orders";
 const prisma = new PrismaClient()
 enum SteepTypes {
     setlink = 'setlink',
@@ -18,30 +19,30 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
         if(!service) return bot.sendMessage(chat_id, "😕 Qandaydir xatolik yuz berdi /start tugmasini bosing")
         let feilds:Array<{steep: number, regex: string, title:string, name:string} | any> = new Array(service?.feild || []).flat()
 
-        console.log('action1', action);
         if(!action?.feild_steep || action?.procces !== true) {
             action.feild_steep = 1
             action.procces = true
             action.feild = {}
+            action.request_id = 100000 + Math.random() * 900000 | 0 
             await prisma.users.update({
                 where: { chat_id: Number(chat_id) },
                 data: {action}
             })
-            return bot.sendMessage(chat_id, feilds[0].title)
+            return bot.sendMessage(chat_id, feilds[0].title, {disable_web_page_preview:true})
         } 
-        console.log(feilds);
+        console.log(action);
         
         for (let i = 0; i<feilds.length; i++) {
             if (feilds[i].steep == action.feild_steep) {
                 console.log(new RegExp(feilds[i].regex), text , new RegExp(feilds[i].regex).test(text));
-                if(!new RegExp(feilds[i].regex).test(text)) return bot.sendMessage(chat_id, feilds[i].error)
+                if(!new RegExp(feilds[i].regex).test(text)) return bot.sendMessage(chat_id, feilds[i].error, {disable_web_page_preview:true})
                 if( 
                     feilds[i].name == 'count' &&
-                    (service.min > Number(text) || service.max < Number(text))
-                ) return bot.sendMessage(chat_id, `❗ Noto'g'ri qiymat\n📉 Min - ${service.min}\n📈 Max - ${service.max}`)
+                    (service.min > Number(text) || Number(action.maxCount.toFixed(0)) < Number(text))
+                ) return bot.sendMessage(chat_id, `❗ Noto'g'ri qiymat\n📉 Min - ${service.min}\n📈 Max - ${(action.maxCount).toFixed(0)}`)
                 action['feild'][feilds[i].name] = text
                 if (i+1 < feilds.length) {
-                    bot.sendMessage(chat_id, feilds[i+1].title)
+                    bot.sendMessage(chat_id, feilds[i+1].title, {disable_web_page_preview:true})
                 }
                 
             } 
@@ -56,13 +57,32 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
         }
 
         if(feilds.length < action.feild_steep) {
+            let send_text = `⏳ Buyurtmani tekshiring va tasdiqlang <b>linkga e'tiborli bo'ling</b>\n\n⛓  SERVICE: <b>${service.name}</b>\n`
             action.feild_steep = 0
             action.procces = false
-            bot.sendMessage(chat_id, 'ishladi')
+            action.back = CancelButtonType.renderOneService
+            action.pending_order = true
+            action['feild']['summa'] = +(service.price / 1000).toFixed(2) * action.feild.count
+            await prisma.users.update({where: {chat_id}, data: { action }})
+            
+            for (const feild of feilds) {
+                send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n`
+            }
+            
+            send_text += `\n💵 Summa: <b>${+(service.price / 1000).toFixed(2) * action.feild.count} so'm</b>\n`+
+            `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
+            
+            bot.sendMessage(chat_id, send_text,{
+                disable_web_page_preview: true,
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard:[
+                        [{text: '✅ Tasdiqlash', callback_data: action.request_id + '=confirm'}],
+                        [{text: '❌ Bekor qilish', callback_data: action.request_id + '=back'}]
+                    ]
+                }
+            })
         }
-        console.log('action2', action);
-        
-       
         
     } catch (error) {
         console.log('set-order error', error)

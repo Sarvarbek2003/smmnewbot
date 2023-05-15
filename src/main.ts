@@ -14,6 +14,7 @@ import { home } from './menu/StatickMenu';
 import { getOneService, rederCategoryKeyboard, renderPartnerKeyboard, renderServices, StatusTypes } from './menu/DinamickMenu';
 import { ButtonType, SteepTypes } from './globalTypes';
 import setOrder from './orders/set-order';
+import { httprequest } from './http';
 
 bot.onText(/(?=📞 Adminstrator)/, async (msg, match) => {
     let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
@@ -75,6 +76,7 @@ bot.on('text', async msg => {
         let category_button = await rederCategoryKeyboard(request_id)
         action.request_id = request_id
         action.feild_steep = 0
+        action.back = CancelButtonType.renderCategoryBtn
         await prisma.users.update({where: {chat_id}, data: {
             steep: ['home', 'setorder'],
             action
@@ -97,31 +99,37 @@ bot.on('callback_query', async msg => {
     const  { user, new_user } = await getUser(msg)
     let { is_member } = await getChatMember(bot, msg)
     let action:any = new Object(user!.action)
-    
+    let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
+    console.log(user);
     let data = callbacData.split('=')[1]
     let request_id = callbacData.split('=')[0]
-
+    console.log(callbacData);
+    
     let steep = new Array(user!.steep).flat()
+    if(set?.bot_is_on === false && chat_id != Number(set?.admin_id)) return bot.answerCallbackQuery(msg.id, {text: "⚙️ Botda texnik ishlar olib borilmoqda",show_alert:true})
     if( is_member == false ) return bot.answerCallbackQuery(msg.id, { text:"Siz kanalimizga a'zo bo'lmagansiz azo bo'lish uchun /start tugmasini bosing!", show_alert: true});
     if (request_id != action.request_id) return  bot.answerCallbackQuery(msg.id, { text:"Ushbu tugmadan endi foydalana olmaysiz"});
     if(data === StatusTypes.WORKING ) return bot.answerCallbackQuery(msg.id, { text:"Ushbu xizmatda texnik ishlar olib borilmoqda", show_alert: true});
     
     if(data === ButtonType.back){
+        console.log('select', action.back == CancelButtonType.select);
+        
         if(action.back == CancelButtonType.select) return 
         steep.pop()
         await prisma.users.update({where: {chat_id}, data:{steep}})
         return cancelClick(user, msg)
     } else if (data === ButtonType.setOrder){
-        console.log('salom', data);
-        
         return await setOrder(bot, undefined, user)
     } else if (data === ButtonType.cancelOrder){
         return bot.answerCallbackQuery(msg.id, { text:"Bu xizmatga buyurtma qilish uchun xisobingizda mablag` yetmaydi", show_alert: true});
+    } else if (data === ButtonType.confirm){
+        return await httprequest(bot, msg, user)
     }
-
     else if(steep[1] == SteepTypes.setOrder){
         await setOrders(bot, msg, user, renderPartnerKeyboard, renderServices, getOneService)
     } 
+    console.log(steep);
+    
 })
 
 
@@ -131,22 +139,33 @@ const cancelClick = async(user:users | undefined, msg:TelegramBot.CallbackQuery)
     try {
         let action:any = new Object(user!.action)
         let chat_id:TelegramBot.ChatId = msg.from.id
-
+        console.log( 'renderCategoryBtn ',
+            action?.back === CancelButtonType.renderCategoryBtn
+        );
+        console.log( 'renderPartnerBtn ',
+            action?.back === CancelButtonType.renderPartnerBtn
+        );
+        console.log( 'renderOneService ',
+            action?.back === CancelButtonType.renderOneService
+        );
+        
         if(action?.back === CancelButtonType.renderCategoryBtn){
             let category_button = await rederCategoryKeyboard(action.request_id)
+            if (!category_button.inline_keyboard.length) return
             action.back = CancelButtonType.select
             await prisma.users.update({where:{chat_id},
                 data:{
                     action: action
                 }
             })
-            bot.editMessageText("✅ Ijtimoiy tarmoqni tanlang", {
+            bot.editMessageText("✅ Ijtimoiy tarmoqni tanlang "+new Date().toLocaleTimeString(), {
                 chat_id,
                 message_id: msg.message?.message_id,
                 reply_markup: category_button
             })
         } else if(action.back === CancelButtonType.renderPartnerBtn){
             let partner_keyboard = await renderPartnerKeyboard(action.partner_id, action.request_id)
+            if (!partner_keyboard.inline_keyboard.length) return
             action.back = CancelButtonType.renderCategoryBtn
             action.partner_id = action.partner_id
             await prisma.users.update({where:{chat_id},
@@ -154,13 +173,14 @@ const cancelClick = async(user:users | undefined, msg:TelegramBot.CallbackQuery)
                     action: action
                 }
             })
-            bot.editMessageText( "✅ Buyurtma turini tanlang", {
+            bot.editMessageText( "✅ Buyurtma turini tanlang "+new Date().toLocaleTimeString(), {
                 chat_id,
                 message_id: msg.message?.message_id,
                 reply_markup: partner_keyboard
             })
         } else if (action.back === CancelButtonType.renderOneService){
             let services_keyboard = await renderServices(action.service_id, action.request_id)
+            if (!services_keyboard.inline_keyboard.length) return
             action.back = CancelButtonType.renderPartnerBtn
             action.service_id = Number(action.service_id)
             await prisma.users.update({where:{chat_id},
@@ -168,7 +188,7 @@ const cancelClick = async(user:users | undefined, msg:TelegramBot.CallbackQuery)
                     action: action
                 }
             })
-            bot.editMessageText( "✅ Xizmat turini tanlang\nNarxi 1000 ta uchun UZSda ko'rsatilgan ", {
+            bot.editMessageText( "✅ Xizmat turini tanlang\nNarxi 1000 ta uchun UZSda ko'rsatilgan "+new Date().toLocaleTimeString(), {
                 chat_id,
                 message_id: msg.message?.message_id,
                 reply_markup: services_keyboard
