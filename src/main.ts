@@ -11,8 +11,9 @@ const prisma = new PrismaClient();
 import { getChatMember, getUser } from './users/users';
 import setOrders, { CancelButtonType } from "./orders/orders"
 import { home } from './menu/StatickMenu';
-import { getOneService, rederCategoryKeyboard, renderPartnerKeyboard, renderServices, StatusTypes } from './menu/DinamickMenu';
+import { getOneService, rederCategoryKeyboard, renderCobinetButton, renderPartnerKeyboard, renderServices, StatusTypes } from './menu/DinamickMenu';
 import { ButtonType, SteepTypes } from './globalTypes';
+import cobinet from "./users/user-kobinet"
 import setOrder from './orders/set-order';
 import { httprequest } from './http';
 
@@ -86,8 +87,13 @@ bot.on('text', async msg => {
             reply_markup: category_button
         })
         
+    } else if (text == '🗃 Kabinet' || steep[1] == SteepTypes.cobinet){
+        if( !steep.includes(SteepTypes.cobinet)  ) await prisma.users.update({where: {chat_id}, data: {
+            steep: ['home', 'cobinet']
+        }})
+        return await cobinet(bot, msg, user, renderCobinetButton)
     } else if (steep[1] == SteepTypes.setOrder){
-        return await setOrder(bot,msg, user)
+        return await setOrder(bot, msg, user)
     }
 })
 

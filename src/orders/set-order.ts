@@ -34,12 +34,12 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
         
         for (let i = 0; i<feilds.length; i++) {
             if (feilds[i].steep == action.feild_steep) {
-                console.log(new RegExp(feilds[i].regex), text , new RegExp(feilds[i].regex).test(text));
                 if(!new RegExp(feilds[i].regex).test(text)) return bot.sendMessage(chat_id, feilds[i].error, {disable_web_page_preview:true})
                 if( 
                     feilds[i].name == 'count' &&
                     (service.min > Number(text) || Number(action.maxCount.toFixed(0)) < Number(text))
                 ) return bot.sendMessage(chat_id, `❗ Noto'g'ri qiymat\n📉 Min - ${service.min}\n📈 Max - ${(action.maxCount).toFixed(0)}`)
+
                 action['feild'][feilds[i].name] = text
                 if (i+1 < feilds.length) {
                     bot.sendMessage(chat_id, feilds[i+1].title, {disable_web_page_preview:true})

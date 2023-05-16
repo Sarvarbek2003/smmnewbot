@@ -1,4 +1,5 @@
 import { PrismaClient, services, setting, users } from "@prisma/client";
+import TelegramBot from "node-telegram-bot-api";
 const prisma = new PrismaClient();
 
 enum StatusTypes {
@@ -117,4 +118,26 @@ const getOneService = async (service_id:number, request_id:number, user:users | 
         }
     }
 }
-export { rederCategoryKeyboard, renderPartnerKeyboard, renderServices,getOneService, StatusTypes }
+
+const renderCobinetButton = async ():Promise<any> => {
+    try {
+        let settings = await prisma.setting.findFirst({where: {id: 1}})
+        
+        let data:any = new Array(settings?.cobinet_action || []).flat()
+        
+        let array:Array<Array<object>> = data.map((el: any) => {
+            if(el.is_active) return [{ text: el.text, [el.keyboard]: el.key_value}] 
+        }).filter((el: any) => el != undefined)
+        console.log(array);
+        
+        return {
+            inline_keyboard: array
+        }
+    } catch (error) {
+        return {    
+            inline_keyboard: []
+        }
+    }
+}
+
+export { rederCategoryKeyboard, renderPartnerKeyboard, renderServices,getOneService, renderCobinetButton, StatusTypes }

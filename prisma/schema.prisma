@@ -39,6 +39,7 @@ model setting{
   admin_id BigInt? @unique
   group_partner_sum String?
   balance Float?
+  cobinet_action Json?
   bot_is_on Boolean @default(true)
 }
 

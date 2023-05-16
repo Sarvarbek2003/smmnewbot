@@ -1,0 +1,17 @@
+[
+	{
+		"text": "Payme",
+		"keyboard": "collback_data",
+		"key_value":"payme"
+	},
+	{
+		"text": "Odam qo'shib pul ishlash",
+		"keyboard":"collback_data",
+		"key_value":"add_parner"
+	},
+	{
+		"text": "Admin orqali",
+		"keyboard":"url",
+		"key_value":"http://t.me/pro_smm_admin"
+	}
+]

@@ -7,7 +7,6 @@ const getUser = async(msg:TelegramBot.Message | TelegramBot.CallbackQuery, chatI
     if(chatId) {
         return await getUserByPartnerId(chatId);
     }
-
     return await getUserByMessage(msg);
 } 
 
@@ -31,7 +30,7 @@ const getUserByMessage = async (msg: TelegramBot.Message | TelegramBot.CallbackQ
                 chat_id,
                 full_name,
                 steep: ['home'],
-                username: msg.from?.username,
+                username: msg.from?.username, 
                 created_ad: new Date()
             }
         })

@@ -8,11 +8,15 @@ enum ButtonType {
 
 enum SteepTypes {
     setOrder = 'setorder',
-    getpartner = 'getparner'
+    getpartner = 'getparner',
+    cobinet = 'cobinet',
+    back = 'back',
+    payme = 'payme'
 }
 
 class ActionType {
     back: string | undefined
     parner_id: number | undefined
+    static back: any
 }
 export {ButtonType, SteepTypes, ActionType}
