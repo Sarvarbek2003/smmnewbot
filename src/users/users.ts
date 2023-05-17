@@ -20,7 +20,7 @@ const getUserByPartnerId = async (chatId?: number) => {
 
 const getUserByMessage = async (msg: TelegramBot.Message | TelegramBot.CallbackQuery) => {
     let chat_id:number = msg.from!.id
-    let full_name:string = msg.from!.first_name + ' ' + msg.from?.last_name || ""
+    let full_name:string = msg.from!.first_name 
     let is_user:users | null  = await prisma.users.findUnique({where: {chat_id}})
     
 

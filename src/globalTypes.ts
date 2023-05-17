@@ -2,16 +2,22 @@ enum ButtonType {
     back =  'back',
     cancel = 'cancel',
     setOrder = 'setorder',
+    payme = 'payme',
     cancelOrder = 'cancelorder',
-    confirm = 'confirm'
+    confirm = 'confirm',
+    check = 'check',
+    add_partner = 'add_partner',
+    gethome = '🏠 Asosiy menu',
+    start = '/start'
 }
 
 enum SteepTypes {
     setOrder = 'setorder',
+    write_summa = 'write_summa',
     getpartner = 'getparner',
     cobinet = 'cobinet',
-    back = 'back',
-    payme = 'payme'
+    checkOrder = 'checkOrder',
+    back = 'back'
 }
 
 class ActionType {

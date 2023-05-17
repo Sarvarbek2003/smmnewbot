@@ -5,7 +5,8 @@ const prisma = new PrismaClient();
 enum StatusTypes {
     ACTIVE = 'active',
     WORKING = 'working',
-    NOACTIVE = 'noactive'
+    NOACTIVE = 'noactive',
+    checkOrder = "checkOrder"
 }
 
 const rederCategoryKeyboard = async(request_id:number) => {
@@ -119,17 +120,16 @@ const getOneService = async (service_id:number, request_id:number, user:users | 
     }
 }
 
-const renderCobinetButton = async ():Promise<any> => {
+const renderCobinetButton = async (user: users | undefined):Promise<any> => {
     try {
         let settings = await prisma.setting.findFirst({where: {id: 1}})
-        
+        let action:any = new Object(user!.action)
         let data:any = new Array(settings?.cobinet_action || []).flat()
         
         let array:Array<Array<object>> = data.map((el: any) => {
-            if(el.is_active) return [{ text: el.text, [el.keyboard]: el.key_value}] 
+            if(el.is_active) return [{ text: el.text, [el.keyboard]: (el.keyboard == 'callback_data' ? action.request_id + '=' : '') + el.key_value}] 
         }).filter((el: any) => el != undefined)
-        console.log(array);
-        
+
         return {
             inline_keyboard: array
         }

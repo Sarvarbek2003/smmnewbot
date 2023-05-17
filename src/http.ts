@@ -52,7 +52,7 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
                             order_id: response.data.order,
                             chat_id: Number(chat_id),
                             link: action.feild.link,
-                            status: 'In Progress',
+                            status: 'Pending',
                             count: Number(action.feild.count),
                             ready_count: 0,
                             price: summa,
@@ -85,7 +85,7 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
                 return bot.sendMessage(chat_id, '⚠️ ' +error.message )
               });
               
-        }
+        } 
         
     } catch (error) {
         console.log('http error ', error);
@@ -93,6 +93,77 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
     }
 }
 
+const createCheck = async(summa:string, callback:Function) => {
+    let options = {
+        method: 'POST',
+        url: process.env.PAYME_URL + '/p2p/create',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        data: {
+            "number": "9860350102464210",
+            "amount": summa
+        }
+        
+    };
+    axios.request(options)
+    .then((res) => {
+        callback(res.data)
+    })
+    .catch((err) => console.log('err',err))
+   
+}
+
+const checkout = async(paymentid:string) => {
+    try {
+        let options = {
+            method: 'GET',
+            url: process.env.PAYME_URL + `/checkout/${paymentid}`,
+        };
+        let res = await axios.request(options)
+        return res.data
+    } catch (err:any) {
+        return {
+            success: true,
+            result: {
+              status: 'error',
+              cheque: 'https://payme.uz/checkout/'+paymentid,
+              error: err.message
+            }
+        }   
+    }
+}
+
+const checkStatus = async() => {
+    let orders = await prisma.orders.findMany({where:{status: {notIn:['Completed', 'Canceled']}}})
+    for (const order of orders) {
+        let options = {
+            method: 'POST',
+            url: process.env.SERVICE_URL,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: {
+                "key": process.env.SERVICE_KEY,
+                "action": "status",
+                "order": order.order_id
+            }
+            
+        };
+        try {
+            let response:any = await axios.request(options)
+            response = response.data
+            await prisma.orders.update({where: {id: order.id}, data: {
+                start_count: Number(response.start_count),
+                status:response.status,
+                ready_count: Number(response.remains)
+            }})
+        } catch (error) {
+            console.log('checkStatus', error);
+        }
+        
+    }
+}
 
 
-export { httprequest }
+export { httprequest, createCheck, checkout, checkStatus }

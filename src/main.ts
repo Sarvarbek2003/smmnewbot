@@ -10,37 +10,34 @@ const prisma = new PrismaClient();
 
 import { getChatMember, getUser } from './users/users';
 import setOrders, { CancelButtonType } from "./orders/orders"
-import { home } from './menu/StatickMenu';
+import { cancel, home } from './menu/StatickMenu';
 import { getOneService, rederCategoryKeyboard, renderCobinetButton, renderPartnerKeyboard, renderServices, StatusTypes } from './menu/DinamickMenu';
 import { ButtonType, SteepTypes } from './globalTypes';
 import cobinet from "./users/user-kobinet"
 import setOrder from './orders/set-order';
-import { httprequest } from './http';
-
-bot.onText(/(?=📞 Adminstrator)/, async (msg, match) => {
-    let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
-    bot.sendMessage(msg.from!.id, "🔰 Bizga savollaringiz yoki muammolaringiz bo'lsa, iltimos, bizning qo'llab-quvvatlash jamoamiz bilan bog'laning.",{
-        reply_markup: {
-            inline_keyboard: [
-                [{text: "👨‍💻 Adminstrator", url: 'https://t.me/'+set?.admin}]
-            ]
-        }
-    })
-})
-
+import { checkStatus, checkout, createCheck, httprequest } from './http';
 
 bot.on('text', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
     const text:string = msg.text!
     const first_name:string = msg.from!.first_name
-
-    const  { user, new_user } = await getUser(msg,)
+    const  { user, new_user } = await getUser(msg)
     let { is_member } = await getChatMember(bot, msg)
     let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
     
     let action:any = new Object(user!.action) 
     let steep = new Array(user!.steep || []).flat()
     let last_steep = steep[steep.length-1]
+
+    if(text === '/boton'){
+        await prisma.setting.updateMany({data: {bot_is_on: false}})
+        return bot.sendMessage(chat_id, 'Bot o\'chirildi')
+    } else if(text === '/botoff'){
+        await prisma.setting.updateMany({data: {bot_is_on: true}})
+        return bot.sendMessage(chat_id, 'Bot yondi')
+    }
+
+
     if(set?.bot_is_on === false && chat_id != Number(set?.admin_id)) return bot.sendMessage(chat_id, "⚙️ Botda texnik ishlar olib borilmoqda")
     if(is_member === false){
         await prisma.users.delete({where:{chat_id}})
@@ -54,7 +51,7 @@ bot.on('text', async msg => {
         })
     }
 
-    if(text.split(' ')[0] == '/start'){
+    if(text.split(' ')[0] === ButtonType.start || text === ButtonType.gethome){
         let partner_id = Number(text.split(' ')[1])
         if(!isNaN(partner_id) && new_user) {
             if(user) {
@@ -62,7 +59,7 @@ bot.on('text', async msg => {
                 if(user === undefined) return
                 let partner = user.partners + 1  
                 prisma.users.update({where:{chat_id: user?.chat_id}, data:{ partners: partner }})
-                bot.sendMessage(partner_id, `👤 <b>Sizning <a href="tg://user?id=${chat_id}">do'stingiz</a> botimizga a'zo bo'ldi</b>\n💰<i> Hisobingizga ${set?.partner_price} RUB qo'shildi</i>`, {parse_mode:'HTML'})
+                bot.sendMessage(partner_id, `👤 <b>Sizning <a href="tg://user?id=${chat_id}">do'stingiz</a> botimizga a'zo bo'ldi</b>\n💰<i> Hisobingizga ${set?.partner_price} SO'M qo'shildi</i>`, {parse_mode:'HTML'})
             }
         }
         await prisma.users.update({where: {chat_id}, data: {
@@ -87,39 +84,96 @@ bot.on('text', async msg => {
             reply_markup: category_button
         })
         
-    } else if (text == '🗃 Kabinet' || steep[1] == SteepTypes.cobinet){
-        if( !steep.includes(SteepTypes.cobinet)  ) await prisma.users.update({where: {chat_id}, data: {
-            steep: ['home', 'cobinet']
-        }})
-        return await cobinet(bot, msg, user, renderCobinetButton)
+    } else if (text == '📞 Adminstrator'){
+        return bot.sendMessage(msg.from!.id, "🔰 Bizga savollaringiz yoki muammolaringiz bo'lsa, iltimos, bizning qo'llab-quvvatlash jamoamiz bilan bog'laning.",{
+            reply_markup: {
+                inline_keyboard: [
+                    [{text: "👨‍💻 Adminstrator", url: 'https://t.me/'+set?.admin}]
+                ]
+            }
+        })
+    } else if (text == '💡 Buyurtmani xolati'){
+        action.request_id = 100000 + Math.random() * 900000 | 0
+        if( !steep.includes(SteepTypes.checkOrder)  ||  text == '💡 Buyurtmani xolati') await prisma.users.update({where: {chat_id}, data: {
+            steep: ['home', SteepTypes.checkOrder],
+            action
+        }}), user!.steep = ['home', SteepTypes.checkOrder]
+        bot.sendMessage(chat_id, "*🆔 Buyurtma id raqamini yuboring*", {
+            parse_mode:'Markdown',
+            reply_markup: cancel
+        })
+    } else if (text == '🗃 Kabinet' || steep[1] === SteepTypes.cobinet){
+        action.request_id = 100000 + Math.random() * 900000 | 0
+        if( !steep.includes(SteepTypes.cobinet)  ||  text == '🗃 Kabinet') await prisma.users.update({where: {chat_id}, data: {
+            steep: ['home', SteepTypes.cobinet],
+            action
+        }}), user!.steep = ['home', SteepTypes.cobinet]
+        return await cobinet(bot, msg, user, renderCobinetButton, createCheck)
     } else if (steep[1] == SteepTypes.setOrder){
         return await setOrder(bot, msg, user)
+    } else if (last_steep === SteepTypes.checkOrder){
+        if(isNaN(Number(text))) return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'}) 
+        let order = await prisma.orders.findFirst({where:{order_id: Number(text)}})
+
+        if (!order) return bot.sendMessage(chat_id, "*‼️ Bu id orqali buyurtma topilmadi*", {parse_mode:'Markdown'})
+
+        let txt = 
+        `<b>${order.status == "Completed" ? '✅' : order.status == 'Canceled' ? '❌' : '⏳'}`+
+        ` Buyurtma holati: </b>${order.status}\n\n`+
+        `<b>🚀 Servis: </b>${order.service_name}\n`+  
+        `<b>🆔 Buyurtma Id:</b> <code>${order.order_id}</code>\n`+  
+        `<b>📍 Servis Id: </b>${order.service_id}\n`+  
+        `<b>💎 Miqdor: ${order.count}</b>\n\n`+  
+        `<b>👁 Boshlang'ich miqdor:</b> ${order.start_count}\n`+  
+        `<b>🏷 Qolgan miqdor:</b> ${order.ready_count}\n`+  
+        `<b>🔗 Link:</b> ${order.link}\n`+  
+        `<b>💵 Summa:</b> ${order.price} so'm\n\n`+  
+        `<b>⏰ Buyurtma sanasi:</b> ${order.created_at.toLocaleString()}\n`
+
+        bot.sendMessage(chat_id, txt, {
+            disable_web_page_preview: true,
+            parse_mode: 'HTML',
+            reply_markup: home
+        })
     }
 })
 
-
+let queryDb:any = {}
 bot.on('callback_query', async msg => {
+
     const chat_id:TelegramBot.ChatId = msg.from!.id
     const callbacData:string = msg.data!
-    const first_name:string = msg.from!.first_name
     const  { user, new_user } = await getUser(msg)
     let { is_member } = await getChatMember(bot, msg)
-    let action:any = new Object(user!.action)
     let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
-    console.log(user);
+
+    let action:any = new Object(user!.action)
     let data = callbacData.split('=')[1]
     let request_id = callbacData.split('=')[0]
-    console.log(callbacData);
-    
     let steep = new Array(user!.steep).flat()
+    
     if(set?.bot_is_on === false && chat_id != Number(set?.admin_id)) return bot.answerCallbackQuery(msg.id, {text: "⚙️ Botda texnik ishlar olib borilmoqda",show_alert:true})
     if( is_member == false ) return bot.answerCallbackQuery(msg.id, { text:"Siz kanalimizga a'zo bo'lmagansiz azo bo'lish uchun /start tugmasini bosing!", show_alert: true});
-    if (request_id != action.request_id) return  bot.answerCallbackQuery(msg.id, { text:"Ushbu tugmadan endi foydalana olmaysiz"});
     if(data === StatusTypes.WORKING ) return bot.answerCallbackQuery(msg.id, { text:"Ushbu xizmatda texnik ishlar olib borilmoqda", show_alert: true});
+    if(queryDb[chat_id] && Number(queryDb[chat_id].request_time+500) > Number(new Date().getTime())) return bot.answerCallbackQuery(msg.id, { text:"⚙️ Botdan sekinroq foydalaning"});
     
+    queryDb[chat_id] = {
+        request_time: new Date().getTime()
+    }
+
+    if (data.split('-')[0] === ButtonType.check){
+        let check = await checkout(data.split('-')[1])
+        if(check.result.status == 'Not paid') return bot.answerCallbackQuery(msg.id ,{text: "❌ To'lov amalga oshirlimagan", show_alert:true})
+        else if(check.result.status == 'error') return bot.answerCallbackQuery(msg.id ,{text: `❌ Tizimda hatolik yuz berdi ushbu xatolikni adminga yuboring\nERR: ${check.result.error}`, show_alert:true})
+        else if(check.result.status == 'Payment successful') {
+            bot.deleteMessage(chat_id, msg.message!.message_id)
+            await prisma.users.update({where: {chat_id}, data:{balance: user!.balance + Number(action.popolnit_summa)}})
+            bot.sendMessage(chat_id, '*✅ To`lov muvoffaqyatli amalga oshirildi.\nHisobingiz* `'+action.popolnit_summa +'`* so\'m ga to\'ldirildi*', {parse_mode: "Markdown"})
+        }
+    }
+
+    if (request_id != action.request_id) return  bot.answerCallbackQuery(msg.id, { text:"❌ Ushbu tugmadan endi foydalana olmaysiz"});
     if(data === ButtonType.back){
-        console.log('select', action.back == CancelButtonType.select);
-        
         if(action.back == CancelButtonType.select) return 
         steep.pop()
         await prisma.users.update({where: {chat_id}, data:{steep}})
@@ -130,16 +184,20 @@ bot.on('callback_query', async msg => {
         return bot.answerCallbackQuery(msg.id, { text:"Bu xizmatga buyurtma qilish uchun xisobingizda mablag` yetmaydi", show_alert: true});
     } else if (data === ButtonType.confirm){
         return await httprequest(bot, msg, user)
-    }
-    else if(steep[1] == SteepTypes.setOrder){
+    } else if (data === ButtonType.payme){
+        steep.push(SteepTypes.write_summa)
+        action.request_id = 100000 + Math.random() * 900000 | 0
+        await prisma.users.update({where: {chat_id}, data: {
+            steep: steep,
+            action: action
+        }})
+        return bot.sendMessage(chat_id, "*💰 Miqdorni kiriting so'mda*", {parse_mode:'Markdown'})
+    } else if (data === ButtonType.add_partner){
+        return bot.sendMessage(chat_id, `👉 @pro_smm_group gruxiga odam qo'shin va qo'shgan odamingiz uchun ${set?.group_partner_sum} so'm pul ishlang`)
+    } else if(steep[1] === SteepTypes.setOrder){
         await setOrders(bot, msg, user, renderPartnerKeyboard, renderServices, getOneService)
     } 
-    console.log(steep);
-    
 })
-
-
-
 
 const cancelClick = async(user:users | undefined, msg:TelegramBot.CallbackQuery) => {
     try {
@@ -204,3 +262,7 @@ const cancelClick = async(user:users | undefined, msg:TelegramBot.CallbackQuery)
         
     }
 }
+
+setInterval(()=> {
+    checkStatus()
+},60000)
