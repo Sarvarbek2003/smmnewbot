@@ -34,10 +34,12 @@ export default async (bot:TelegramBot, msg: TelegramBot.Message, user:users | un
             `💰 Hisobingizni UZCARD/HUMO kartalari orqali to'ldirishingiz mumkin`
             let keyboard = await renderCobinetButton(user)
             bot.sendMessage(chat_id, text,{
+                disable_web_page_preview: true,
                 parse_mode: 'HTML',
                 reply_markup: keyboard
             })
         } else if(last_steep === SteepTypes.write_summa){
+            if(!Number.isInteger(+text) || (+text >= 1000000 || +text < 1000)) return bot.sendMessage(chat_id, "*❌ Noto'g'ri qiymat. Faqat raqam kiriting e'tiborli bo'ling!\n📈 Max: 1000000 so'm\n📉 Min: 1000 so'm*", {parse_mode:'Markdown'})
             action.popolnit_summa = text
             steep = ['home']
             await prisma.users.update({where: {chat_id}, data: {steep,action}})

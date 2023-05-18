@@ -16,14 +16,16 @@ import { ButtonType, SteepTypes } from './globalTypes';
 import cobinet from "./users/user-kobinet"
 import setOrder from './orders/set-order';
 import { checkStatus, checkout, createCheck, httprequest } from './http';
+let settingCache: setting | null
 
 bot.on('text', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
     const text:string = msg.text!
+    if(msg.chat.id.toString() == '-1001593191951') return 
     const first_name:string = msg.from!.first_name
     const  { user, new_user } = await getUser(msg)
     let { is_member } = await getChatMember(bot, msg)
-    let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
+    let set:setting | null = settingCache
     
     let action:any = new Object(user!.action) 
     let steep = new Array(user!.steep || []).flat()
@@ -35,6 +37,12 @@ bot.on('text', async msg => {
     } else if(text === '/botoff'){
         await prisma.setting.updateMany({data: {bot_is_on: true}})
         return bot.sendMessage(chat_id, 'Bot yondi')
+    } else if (text.split('=')[0] === '/addBalance'){
+        const  { user, new_user } = await getUser(msg, Number(text.split('=')[1]))
+        if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
+        await prisma.users.update({where: {chat_id: Number(text.split('=')[1])}, data: {balance: user!.balance + Number(text.split('=')[2])}})
+        bot.sendMessage(text.split('=')[1], `<b>Sizning balansingiz admin tomonidan ${text.split("=")[2]} so'mga to'ldirildi</b>`, {parse_mode:'HTML'})
+        return bot.sendMessage(chat_id, `<a href="tg://user?id=${text.split('=')[1]}">Foydalanuvchi</a> balansi ${text.split('=')[2]} so'mga to'ldirildi`, {parse_mode:'HTML'})
     }
 
 
@@ -112,7 +120,7 @@ bot.on('text', async msg => {
     } else if (steep[1] == SteepTypes.setOrder){
         return await setOrder(bot, msg, user)
     } else if (last_steep === SteepTypes.checkOrder){
-        if(isNaN(Number(text))) return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'}) 
+        if(!Number.isInteger(text)) return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'}) 
         let order = await prisma.orders.findFirst({where:{order_id: Number(text)}})
 
         if (!order) return bot.sendMessage(chat_id, "*‼️ Bu id orqali buyurtma topilmadi*", {parse_mode:'Markdown'})
@@ -140,7 +148,7 @@ bot.on('text', async msg => {
 
 let queryDb:any = {}
 bot.on('callback_query', async msg => {
-
+    
     const chat_id:TelegramBot.ChatId = msg.from!.id
     const callbacData:string = msg.data!
     const  { user, new_user } = await getUser(msg)
@@ -168,7 +176,7 @@ bot.on('callback_query', async msg => {
         else if(check.result.status == 'Payment successful') {
             bot.deleteMessage(chat_id, msg.message!.message_id)
             await prisma.users.update({where: {chat_id}, data:{balance: user!.balance + Number(action.popolnit_summa)}})
-            bot.sendMessage(chat_id, '*✅ To`lov muvoffaqyatli amalga oshirildi.\nHisobingiz* `'+action.popolnit_summa +'`* so\'m ga to\'ldirildi*', {parse_mode: "Markdown"})
+            return bot.sendMessage(chat_id, '*✅ To`lov muvoffaqyatli amalga oshirildi.\nHisobingiz* `'+action.popolnit_summa +'`* so\'m ga to\'ldirildi*', {parse_mode: "Markdown"})
         }
     }
 
@@ -203,16 +211,7 @@ const cancelClick = async(user:users | undefined, msg:TelegramBot.CallbackQuery)
     try {
         let action:any = new Object(user!.action)
         let chat_id:TelegramBot.ChatId = msg.from.id
-        console.log( 'renderCategoryBtn ',
-            action?.back === CancelButtonType.renderCategoryBtn
-        );
-        console.log( 'renderPartnerBtn ',
-            action?.back === CancelButtonType.renderPartnerBtn
-        );
-        console.log( 'renderOneService ',
-            action?.back === CancelButtonType.renderOneService
-        );
-        
+
         if(action?.back === CancelButtonType.renderCategoryBtn){
             let category_button = await rederCategoryKeyboard(action.request_id)
             if (!category_button.inline_keyboard.length) return
@@ -263,6 +262,24 @@ const cancelClick = async(user:users | undefined, msg:TelegramBot.CallbackQuery)
     }
 }
 
+const cacheModule = async ()=> {
+    let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
+    settingCache = set
+}
+
+bot.on('new_chat_members',async msg=> {         
+    let from_chat = msg.from?.id
+    if(msg.chat.id.toString() != '-1001593191951') return
+    let new_chat_members = msg.new_chat_members!
+    for (let i = 0; i < new_chat_members!.length; i++) {
+        const {user, new_user} = await getUser(msg)
+        if(from_chat == new_chat_members[i]!.id) return
+        let summa = Number(settingCache?.group_partner_sum || 10)
+        await prisma.users.update({where:{chat_id: Number(from_chat)}, data: {balance: user!.balance + summa, group_partners: user!.partners + 1}})
+    }
+})
+
 setInterval(()=> {
+    cacheModule()
     checkStatus()
 },60000)

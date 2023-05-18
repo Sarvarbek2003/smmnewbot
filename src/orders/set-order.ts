@@ -69,7 +69,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n`
             }
             
-            send_text += `\n💵 Summa: <b>${+(service.price / 1000).toFixed(2) * action.feild.count} so'm</b>\n`+
+            send_text += `\n💵 Summa: <b>${(+(service.price / 1000).toFixed(2) * action.feild.count).toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
             `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
             
             bot.sendMessage(chat_id, send_text,{
