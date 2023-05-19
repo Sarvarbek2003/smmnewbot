@@ -15,7 +15,7 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
         let action:any = new Object(user!.action)
         let getOneServiceData:string = msg?.data || ''
         let chat_id:TelegramBot.ChatId = Number(user?.chat_id)
-        console.log(action);
+
         let service = await prisma.services.findUnique({where:{id: action.oneservice_id}})
         let feilds:Array<{steep: number, regex: string, title:string, name:string} | any> = new Array(service?.feild || []).flat()
         
@@ -57,18 +57,24 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
                             ready_count: 0,
                             price: summa,
                             start_count: 0,
+                            return:false,
                             created_at: new Date()
                         }
                     }).then((el)=> console.log('newOrder', el))
 
+                    let gr_send = `♻️ Yangi buyurtma keldi\n\n🚀 Service: ${service?.name}\n🆔 Buyurtma ID: <code>${response.data.order}</code>\n\n`
                     let send_text = `✅ Buyurtma qabul qilindi\n\n🚀 Service: ${service?.name}\n🆔 Buyurtma ID: <code>${response.data.order}</code>\n\n`
                     for (const feild of feilds) {
                         send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n`
+                        gr_send += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n`
                     }
                     
-                    send_text += `\n💵 Summa: <b>${summa} so'm</b>\n`+
+                    send_text += `\n💵 Summa: <b>${summa.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
+                    `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
+                    gr_send += `\n💵 Summa: <b>${summa.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                     `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                     bot.sendMessage(chat_id, send_text, {parse_mode:'HTML', disable_web_page_preview: true})
+                    bot.sendMessage('-1001593191951', gr_send, {parse_mode:'HTML', disable_web_page_preview: true})
                     let userBalance:number = user!.balance - summa
                     prisma.users.update({where: {chat_id:Number(chat_id)}, data:{
                         balance: userBalance
@@ -164,6 +170,7 @@ const checkStatus = async() => {
         
     }
 }
+
 
 
 export { httprequest, createCheck, checkout, checkStatus }

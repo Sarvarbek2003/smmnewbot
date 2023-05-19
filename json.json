@@ -1,17 +1,16 @@
 [
 	{
-		"text": "Payme",
-		"keyboard": "collback_data",
-		"key_value":"payme"
+	  "name": "link",
+	  "error": "Link noto'g'ri! Namunadagidaqa yuboring\nNamuna: https://www.instagram.com/stories/instagram_nik/3102961697256767883/",
+	  "regex": "https:\/\/www\\.instagram\\.com\/stories\/[a-zA-Z0-9_]+\/\\d+\\?|\/",
+	  "steep": 1,
+	  "title": "Instagram storis linkini yuboring!\nNamuna: https://www.instagram.com/stories/instagram_nik/3102961697256767883/"
 	},
 	{
-		"text": "Odam qo'shib pul ishlash",
-		"keyboard":"collback_data",
-		"key_value":"add_parner"
-	},
-	{
-		"text": "Admin orqali",
-		"keyboard":"url",
-		"key_value":"http://t.me/pro_smm_admin"
+	  "name": "count",
+	  "error": "Miqdor noto'g'ri kiritildi Ilimos faqat raqam kiriting!",
+	  "regex": "^[0-9]*$",
+	  "steep": 2,
+	  "title": "Miqdorni kiriting faqat sonda"
 	}
-]
+  ]

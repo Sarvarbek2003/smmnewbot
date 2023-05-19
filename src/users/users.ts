@@ -3,7 +3,7 @@ import TelegramBot from 'node-telegram-bot-api'
 import { SelectUserResponse } from "src/types/userTypes";
 const prisma = new PrismaClient();
 
-const getUser = async(msg:TelegramBot.Message | TelegramBot.CallbackQuery, chatId?:number):Promise<SelectUserResponse> => {
+const getUser = async(msg?:TelegramBot.Message | TelegramBot.CallbackQuery | undefined, chatId?:number):Promise<SelectUserResponse> => {
     if(chatId) {
         return await getUserByPartnerId(chatId);
     }
@@ -18,7 +18,8 @@ const getUserByPartnerId = async (chatId?: number) => {
     return {user: is_user, new_user: false}
 }
 
-const getUserByMessage = async (msg: TelegramBot.Message | TelegramBot.CallbackQuery) => {
+const getUserByMessage = async (msg: TelegramBot.Message | TelegramBot.CallbackQuery | undefined) => {
+    if(!msg) return {user:undefined , new_user:false}
     let chat_id:number = msg.from!.id
     let full_name:string = msg.from!.first_name 
     let is_user:users | null  = await prisma.users.findUnique({where: {chat_id}})
@@ -30,7 +31,7 @@ const getUserByMessage = async (msg: TelegramBot.Message | TelegramBot.CallbackQ
                 chat_id,
                 full_name,
                 steep: ['home'],
-                username: msg.from?.username, 
+                username: msg!.from?.username, 
                 created_ad: new Date()
             }
         })
