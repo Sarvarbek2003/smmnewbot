@@ -264,15 +264,17 @@ const cancelClick = async(user:users | undefined, msg:TelegramBot.CallbackQuery)
 }
 
 let checkOrders = async() => {
-    let orders = await prisma.orders.findMany({ where: { AND: { status: {in:['Canceled', 'Partial']}, return: false} } })
+    let orders = await prisma.orders.findMany({ where: { AND: { status: {in:['Canceled', 'Partial', 'Completed']}, return: false} } })
     for (const order of orders) {
         let {user} = await getUser(undefined, Number(order.chat_id))
-        let return_price = order.price - (order.price! / order.count) * (order.count! > order.ready_count! ? order.count! - order.ready_count!: 0)
+        let return_price = order.price! - (order.price! / order.count!) * (order.count! > order.ready_count! ? order.count! - order.ready_count!: 0)
 
         await prisma.orders.update({ where: { id: order.id }, data: { return: true } })
         await prisma.users.update({ where: { chat_id: Number(order.chat_id) }, data: { balance: user!.balance + return_price } })
-
-        return bot.sendMessage(Number(order.chat_id), `<b>⚠️ Sizning <code>${order.order_id}</code> raqamli buyurtmangiz ${order.status == "Partial" ? 'qisman bajarildi' : 'bekor qilindi'}\n🏷 Buyurtma miqdori: ${order.count} ta\n✔️ Bajarilgan miqdor: ${order.count! - order.ready_count!}\n🗞 Hisobingizga ${return_price} so'm qaytarildi</b>`, {parse_mode: 'HTML'})
+        let completedText = `<b>✅ Sizning <code>${order.order_id}</code> raqamli buyurtmangiz bajarildi\n\n🏷 Buyurtma miqdori: ${order.count} ta\n✔️ Bajarilgan miqdor: ${order.count! - order.ready_count!}</b>\n`
+        let canceledText = `<b>⚠️ Sizning <code>${order.order_id}</code> raqamli buyurtmangiz ${order.status == "Partial" ? 'qisman bajarildi' : 'bekor qilindi'}\n🏷 Buyurtma miqdori: ${order.count} ta\n✔️ Bajarilgan miqdor: ${order.count! - order.ready_count!}\n🗞 Hisobingizga ${return_price} so'm qaytarildi</b>`
+        let text = order.status == 'Completed' ? completedText : canceledText
+        return bot.sendMessage(Number(order.chat_id), text, {parse_mode: 'HTML'})
     }
 }
 
@@ -284,16 +286,20 @@ cacheModule()
 
 let newChatMembersCache:any = {}
 
-bot.on('new_chat_members', msg=> {         
+bot.on('new_chat_members', async msg=> {         
     let from_chat = msg.from!.id
     if(msg.chat.id.toString() != '-1001593191951') return
+    await getUser(msg)
+    
     let new_chat_members = msg.new_chat_members!
     for (let i = 0; i < new_chat_members!.length; i++) {
-        if(from_chat == new_chat_members[i]!.id) return
-        if (newChatMembersCache?.from_chat) {
-            newChatMembersCache.from_chat.summa = newChatMembersCache.from_chat.summa + Number(settingCache?.group_partner_sum || 10)
-            newChatMembersCache.from_chat.count = newChatMembersCache.from_chat.count + 1
+        if(from_chat == new_chat_members[i]!.id)  return 
+        console.log(newChatMembersCache[from_chat], newChatMembersCache[from_chat] == true);
+        if (newChatMembersCache[from_chat]) {
+            newChatMembersCache[from_chat].summa = newChatMembersCache[from_chat].summa + Number(settingCache?.group_partner_sum || 10)
+            newChatMembersCache[from_chat].count = newChatMembersCache[from_chat].count + 1
         } else newChatMembersCache[from_chat] = {summa:Number(settingCache?.group_partner_sum || 10), count: 1}
+        console.log('new_Chat_Members_Cache', newChatMembersCache);
     }
 })
 
@@ -309,8 +315,10 @@ setInterval(async()=> {
             data: {balance: user!.balance + summa, group_partners: user!.group_partners + count}
         })
         console.log('update_user',update_user);
+        console.log('newChatMembersCache', newChatMembersCache);
+        delete newChatMembersCache[chat_members[i]]
     }
-    console.log('newChatMembersCache', newChatMembersCache);
+    console.log('Delete newChatMembersCache', newChatMembersCache);
 }, 5000);
 
 setInterval(async()=> {

@@ -64,7 +64,7 @@ const renderPartnerKeyboard = async (category_id:string, request_id:number) => {
 
 const renderServices = async (partner_id: string, request_id:number) => {
     try {
-        let services = await prisma.services.findMany({where: {partner_id:Number(partner_id)}, orderBy: {price: 'asc'}})
+        let services = await prisma.services.findMany({ where: { AND: {partner_id:Number(partner_id), NOT: {status: StatusTypes.NOACTIVE} } }, orderBy: {price: 'asc'}})
         let array = []
         services.forEach(el => {
             let callbacData = `${request_id}=${el.status === StatusTypes.WORKING ? StatusTypes.WORKING : el.id}`
