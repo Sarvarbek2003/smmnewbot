@@ -40,7 +40,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                     (service.min > Number(text) || Number(action.maxCount.toFixed(0)) < Number(text))
                 ) return bot.sendMessage(chat_id, `❗ Noto'g'ri qiymat\n📉 Min - ${service.min}\n📈 Max - ${(action.maxCount).toFixed(0)}`)
 
-                action['feild'][feilds[i].name] = text
+                action['feild'][feilds[i].name] =  feilds[i].mask != '0' ? feilds[0].mask + text : text
                 if (i+1 < feilds.length) {
                     bot.sendMessage(chat_id, feilds[i+1].title, {disable_web_page_preview:true})
                 }

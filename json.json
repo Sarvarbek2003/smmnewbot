@@ -1,14 +1,16 @@
 [
 	{
 	  "name": "link",
-	  "error": "Link noto'g'ri! Namunadagidaqa yuboring\nNamuna: https://www.instagram.com/stories/instagram_nik/3102961697256767883/",
-	  "regex": "https:\/\/www\\.instagram\\.com\/stories\/[a-zA-Z0-9_]+\/\\d+\\?|\/",
+	  "error": "Link noto'g'ri! Namunadagidaqa kiriting!\nNamuna: instagram_nik (https) protokoli kerak emas",
+	  "regex": "([A-Za-z0-9])\\w+",
+	  "mask": "https://www.instagram.com/",
 	  "steep": 1,
-	  "title": "Instagram storis linkini yuboring!\nNamuna: https://www.instagram.com/stories/instagram_nik/3102961697256767883/"
+	  "title": "Instagram accaunt linkini yuboring!\nNamuna: instagram nikiz (https) protokoli kerak emas"
 	},
 	{
 	  "name": "count",
 	  "error": "Miqdor noto'g'ri kiritildi Ilimos faqat raqam kiriting!",
+	  "mask": "0",
 	  "regex": "^[0-9]*$",
 	  "steep": 2,
 	  "title": "Miqdorni kiriting faqat sonda"
