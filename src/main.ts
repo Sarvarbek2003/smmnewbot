@@ -120,7 +120,11 @@ bot.on('text', async msg => {
     } else if (steep[1] == SteepTypes.setOrder){
         return await setOrder(bot, msg, user)
     } else if (last_steep === SteepTypes.checkOrder){
+<<<<<<< HEAD
         if(!Number.isInteger(Number(text))) return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'}) 
+=======
+        if(!Number.isInteger(text)) return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'}) 
+>>>>>>> cbff865efe917ecaeff33053c77b9a293a0cdc4a
         let order = await prisma.orders.findFirst({where:{order_id: Number(text)}})
 
         if (!order) return bot.sendMessage(chat_id, "*‼️ Bu id orqali buyurtma topilmadi*", {parse_mode:'Markdown'})
@@ -263,6 +267,7 @@ const cancelClick = async(user:users | undefined, msg:TelegramBot.CallbackQuery)
     }
 }
 
+<<<<<<< HEAD
 let checkOrders = async() => {
     let orders = await prisma.orders.findMany({ where: { AND: { status: {in:['Canceled', 'Partial', 'Completed']}, return: false} } })
     for (const order of orders) {
@@ -278,10 +283,13 @@ let checkOrders = async() => {
     }
 }
 
+=======
+>>>>>>> cbff865efe917ecaeff33053c77b9a293a0cdc4a
 const cacheModule = async ()=> {
     let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
     settingCache = set
 }
+<<<<<<< HEAD
 cacheModule()
 
 let newChatMembersCache:any = {}
@@ -323,6 +331,22 @@ setInterval(async()=> {
 
 setInterval(async()=> {
     checkOrders()
+=======
+
+bot.on('new_chat_members',async msg=> {         
+    let from_chat = msg.from?.id
+    if(msg.chat.id.toString() != '-1001593191951') return
+    let new_chat_members = msg.new_chat_members!
+    for (let i = 0; i < new_chat_members!.length; i++) {
+        const {user, new_user} = await getUser(msg)
+        if(from_chat == new_chat_members[i]!.id) return
+        let summa = Number(settingCache?.group_partner_sum || 10)
+        await prisma.users.update({where:{chat_id: Number(from_chat)}, data: {balance: user!.balance + summa, group_partners: user!.partners + 1}})
+    }
+})
+
+setInterval(()=> {
+>>>>>>> cbff865efe917ecaeff33053c77b9a293a0cdc4a
     cacheModule()
     checkStatus()
 },60000)

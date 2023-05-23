@@ -70,8 +70,11 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
                     }
                     
                     send_text += `\n💵 Summa: <b>${summa.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
+<<<<<<< HEAD
                     `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                     gr_send += `\n💵 Summa: <b>${summa.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
+=======
+>>>>>>> cbff865efe917ecaeff33053c77b9a293a0cdc4a
                     `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                     bot.sendMessage(chat_id, send_text, {parse_mode:'HTML', disable_web_page_preview: true})
                     bot.sendMessage('-1001593191951', gr_send, {parse_mode:'HTML', disable_web_page_preview: true})
