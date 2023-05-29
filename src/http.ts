@@ -77,7 +77,8 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
                     bot.sendMessage('-1001593191951', gr_send, {parse_mode:'HTML', disable_web_page_preview: true})
                     let userBalance:number = user!.balance - summa
                     prisma.users.update({where: {chat_id:Number(chat_id)}, data:{
-                        balance: userBalance
+                        balance: userBalance,
+                        steep: ['home']
                     }}).then((el)=> console.log('userBalance', el))
                 } else if(response.data.error){
                     if(response.data.error.replaceAll(' ','').replaceAll('.', '') === 'YouhaveactiveorderwiththislinkPleasewaituntilorderbeingcompleted'){
