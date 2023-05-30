@@ -1,6 +1,7 @@
 enum ButtonType {
     back =  'back',
     cancel = 'cancel',
+    backOrder = 'backOrder',
     setOrder = 'setorder',
     payme = 'payme',
     cancelOrder = 'cancelorder',
@@ -17,7 +18,8 @@ enum SteepTypes {
     getpartner = 'getparner',
     cobinet = 'cobinet',
     checkOrder = 'checkOrder',
-    back = 'back'
+    back = 'back',
+    getservices = "getservices"
 }
 
 class ActionType {

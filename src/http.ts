@@ -1,7 +1,8 @@
 import { PrismaClient, setting, users } from "@prisma/client";
-import { translate } from "free-translate";
 import TelegramBot from 'node-telegram-bot-api'
 import axios from 'axios'
+import { readFileSync, writeFileSync } from "fs";
+import { join } from "path";
 const prisma = new PrismaClient();
 
 enum ServiceType { 
@@ -56,7 +57,7 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
                             count: Number(action.feild.count),
                             ready_count: 0,
                             price: summa,
-                            start_count: 0,
+                            start_count: action.start_count,
                             return:false,
                             created_at: new Date()
                         }
@@ -172,6 +173,39 @@ const checkStatus = async() => {
     }
 }
 
+const profilDataByInsta = async (username:string, bot:TelegramBot) => {
+    try {
+        let response = await axios.get(`http://mahina-info.ru/index.php?username=${username}`)
+        return response.data.result
+    } catch (error) {
+        return {}
+    }
+}
+
+const profileDataByTg = async (username:string) => {
+    let localbase = JSON.parse(readFileSync(join(process.cwd(), 'src', 'localbase.json'), 'utf8'))
+    localbase.request_count = localbase.request_count + 1
+    username = username.startsWith('https://t.me/') ? username.split('https://t.me/')[1] : username.split('@')[1]
+    console.log(username);
+    const options = {
+        method: 'GET',
+        url: 'https://telegram92.p.rapidapi.com/api/info/channel',
+        params: {channel: username},
+        headers: {
+          'X-RapidAPI-Key': localbase['request_token'+(localbase.request_count > 1000 ? 2 : 1)],
+          'X-RapidAPI-Host': 'telegram92.p.rapidapi.com'
+        }
+    };
+
+    try {
+        let response = await axios.request(options);
+        writeFileSync(join(process.cwd(), 'src', 'localbase.json'), JSON.stringify(localbase, null, 4))
+        
+        return response.data
+    } catch (error) {
+        return {}
+    }
+}
 
 
-export { httprequest, createCheck, checkout, checkStatus }
+export { httprequest, createCheck, checkout, checkStatus, profilDataByInsta, profileDataByTg}

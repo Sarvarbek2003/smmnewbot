@@ -94,8 +94,8 @@ const getOneService = async (service_id:number, request_id:number, user:users | 
         action.maxCount = maxCount
         await prisma.users.update({where: {chat_id: Number(user?.chat_id)}, data:{action}})
         
-        let text = `💵 1000 ta - *${getOneService?.price}* so'm\n📉 Min - *${getOneService?.min}*\n📈 Max - *${getOneService?.max}*\n`+
-        `⏰ Qo'shilish vaqti - *${getOneService?.time}*\n♻ Qayta tiklash - *${getOneService?.refill ? 'Mavjud':'Mavjud emas'}*\n\n`+
+        let text = `💵 1000 ta - *${getOneService?.price}* so'm\n📉 Minimal - *${getOneService?.min}*\n📈 Maximal - *${getOneService?.max}*\n`+
+        `⏰ Qo'shilish vaqti - *${getOneService?.time}*\n♻ Qayta tiklash - *${getOneService?.refill ? 'Mavjud':'Mavjud emas'}*\n🚀 Service ${getOneService?.service_id}-${getOneService?.name}\n\n`+
         `💹 *Sizning pulingiz ${maxCount.toFixed(0)} ta uchun yetadi*\n\n`+
         `_${info.uz}_`
 
@@ -110,6 +110,8 @@ const getOneService = async (service_id:number, request_id:number, user:users | 
             }
         }
     } catch (error) {
+        console.log(error);
+        
         return {
             isActive:false,
             text: "Service vaqtincha ishlamayabdi",

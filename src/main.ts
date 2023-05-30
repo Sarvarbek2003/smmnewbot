@@ -15,8 +15,9 @@ import { getOneService, rederCategoryKeyboard, renderCobinetButton, renderPartne
 import { ButtonType, SteepTypes } from './globalTypes';
 import cobinet from "./users/user-kobinet"
 import setOrder from './orders/set-order';
-import { checkStatus, checkout, createCheck, httprequest } from './http';
+import { checkStatus, checkout, createCheck, httprequest, profilDataByInsta, profileDataByTg } from './http';
 let settingCache: setting | null
+
 
 bot.on('text', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
@@ -118,7 +119,7 @@ bot.on('text', async msg => {
         }}), user!.steep = ['home', SteepTypes.cobinet]; steep = ['home', SteepTypes.cobinet]; last_steep = steep[steep.length-1]
         return await cobinet(bot, msg, user, renderCobinetButton, createCheck)
     } else if (steep[1] == SteepTypes.setOrder){
-        return await setOrder(bot, msg, user)
+        return await setOrder(bot, msg, user, profilDataByInsta, profileDataByTg, home)
     } else if (last_steep === SteepTypes.checkOrder){
         if(!Number.isInteger(Number(text))) return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'}) 
         let order = await prisma.orders.findFirst({where:{order_id: Number(text)}})
@@ -169,7 +170,7 @@ bot.on('callback_query', async msg => {
     queryDb[chat_id] = {
         request_time: new Date().getTime()
     }
-
+    
     if (data.split('-')[0] === ButtonType.check){
         let check = await checkout(data.split('-')[1])
         if(check.result.status == 'Not paid') return bot.answerCallbackQuery(msg.id ,{text: "❌ To'lov amalga oshirlimagan", show_alert:true})
@@ -188,7 +189,7 @@ bot.on('callback_query', async msg => {
         await prisma.users.update({where: {chat_id}, data:{steep}})
         return cancelClick(user, msg)
     } else if (data === ButtonType.setOrder){
-        return await setOrder(bot, undefined, user)
+        return await setOrder(bot, undefined, user, profilDataByInsta, profileDataByTg, home)
     } else if (data === ButtonType.cancelOrder){
         return bot.answerCallbackQuery(msg.id, { text:"Bu xizmatga buyurtma qilish uchun xisobingizda mablag` yetmaydi", show_alert: true});
     } else if (data === ButtonType.confirm){
@@ -203,7 +204,22 @@ bot.on('callback_query', async msg => {
         return bot.sendMessage(chat_id, "*💰 Miqdorni kiriting so'mda*", {parse_mode:'Markdown'})
     } else if (data === ButtonType.add_partner){
         return bot.sendMessage(chat_id, `👉 @pro_smm_group gruxiga odam qo'shin va qo'shgan odamingiz uchun ${set?.group_partner_sum} so'm pul ishlang`)
-    } else if(steep[1] === SteepTypes.setOrder){
+    } else if(steep[1] === SteepTypes.setOrder || ButtonType.backOrder === data){
+        if(ButtonType.backOrder === data){
+            let request_id = 100000 + Math.random() * 900000 | 0
+            let category_button = await rederCategoryKeyboard(request_id)
+            action.request_id = request_id
+            action.feild_steep = 0
+            action.back = CancelButtonType.renderCategoryBtn
+            await prisma.users.update({where: {chat_id}, data: {
+                steep: ['home', 'setorder'],
+                action
+            }})
+            bot.deleteMessage(chat_id, msg.message!.message_id)
+            return bot.sendMessage(chat_id, "❌ Buyurtma bekor qilindi ijtimoiy tarmoq turini tanlang", {
+                reply_markup: category_button
+            })
+        }
         await setOrders(bot, msg, user, renderPartnerKeyboard, renderServices, getOneService)
     } 
 })

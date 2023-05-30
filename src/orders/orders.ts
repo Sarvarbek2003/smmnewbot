@@ -60,6 +60,8 @@ export default async(
     } else if (last_steep === SteepTypes.getservices){
         
         let getOneServiceData = await getOneService(Number(data), action.request_id, user)
+        console.log(getOneServiceData);
+        
         if(getOneServiceData.keyboard.length) return
         if(!getOneServiceData.isActive) return bot.answerCallbackQuery(msg.id, { text:"Ushbu xizmatda texnik ishlar olib borilmoqda", show_alert: true});
         steep.push(SteepTypes.setOrder)
