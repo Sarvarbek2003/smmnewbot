@@ -18,6 +18,8 @@ import setOrder from './orders/set-order';
 import { checkStatus, checkout, createCheck, httprequest, profilDataByInsta, profileDataByTg } from './http';
 let settingCache: setting | null
 
+bot.on('message', msg => console.log(msg))
+
 
 bot.on('text', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
@@ -118,7 +120,7 @@ bot.on('text', async msg => {
             action
         }}), user!.steep = ['home', SteepTypes.cobinet]; steep = ['home', SteepTypes.cobinet]; last_steep = steep[steep.length-1]
         return await cobinet(bot, msg, user, renderCobinetButton, createCheck)
-    } else if (steep[1] == SteepTypes.setOrder){
+    } else if (steep[1] == SteepTypes.setOrder && action.feild_steep != 0){
         return await setOrder(bot, msg, user, profilDataByInsta, profileDataByTg, home)
     } else if (last_steep === SteepTypes.checkOrder){
         if(!Number.isInteger(Number(text))) return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'}) 

@@ -67,7 +67,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
             action['feild']['summa'] = +(service.price / 1000).toFixed(2) * action.feild.count
             let partner:any = await prisma.partners.findUnique({where: {id: action.service_id}})
             
-            
+            let message = await bot.sendMessage(chat_id, '⏳')
             if(partner?.info?.type === 'subscriber' && partner.info.social == 'telegram'){
                 let tgdata = await profileDataByTg(action.feild?.link)
                 
@@ -87,7 +87,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 
                 send_text += `\n💵 Summa: <b>${(+(service.price / 1000).toFixed(2) * action.feild.count).toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
-                
+                bot.deleteMessage(chat_id, message.message_id)
                 bot.sendPhoto(chat_id, tgdata?.photo ? tgdata.photo : 'https://t.me/Tg_ItBlog/582',{
                     caption: send_text,
                     parse_mode: 'HTML',
@@ -117,7 +117,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 
                 send_text += `\n💵 Summa: <b>${(+(service.price / 1000).toFixed(2) * action.feild.count).toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
-                
+                bot.deleteMessage(chat_id, message.message_id)
                 bot.sendPhoto(chat_id, instadata.profile_pic_url,{
                     caption: send_text,
                     parse_mode: 'HTML',
