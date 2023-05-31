@@ -72,6 +72,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 let tgdata = await profileDataByTg(action.feild?.link)
                 
                 if(!tgdata || tgdata.error) {
+                    bot.deleteMessage(chat_id, message.message_id)
                     await prisma.users.update({where: {chat_id}, data: { steep: ['home'] }})
                     return bot.sendMessage(chat_id, "❌ Bu nom bo'yicha kanal topilmadi", {reply_markup:home})
                 } 
@@ -101,9 +102,11 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
             } else if (partner?.info?.type === 'subscriber' && partner.info.social == 'instagram'){
                 let instadata = await profilDataByInsta(action.feild?.nomask)
                 if(!instadata){
+                    bot.deleteMessage(chat_id, message.message_id)
                     await prisma.users.update({where: {chat_id}, data: { steep: ['home'] }})
                     return bot.sendMessage(chat_id, "❌ Bunday akkaunt topilmadi tekshirib qaytadan urinib ko'ring", {reply_markup:home})
                 } else if (instadata.is_private){
+                    bot.deleteMessage(chat_id, message.message_id)
                     await prisma.users.update({where: {chat_id}, data: { steep: ['home'] }})
                     return bot.sendMessage(chat_id, "⚠️ Sizning akkauntingiz shaxsiy! Biz faqat ommaviy akkauntlarga xizmat ko'rsatamiz akkauntingizni ommaviy qilib qayta urinib ko'ring",  {reply_markup:home})
                 }
@@ -136,7 +139,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 
                 send_text += `\n💵 Summa: <b>${(+(service.price / 1000).toFixed(2) * action.feild.count).toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
-                
+                bot.deleteMessage(chat_id, message.message_id)
                 bot.sendMessage(chat_id, send_text,{
                     disable_web_page_preview: true,
                     parse_mode: 'HTML',
