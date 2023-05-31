@@ -178,7 +178,7 @@ const profilDataByInsta = async (username:string, bot:TelegramBot) => {
         let response = await axios.get(`http://mahina-info.ru/index.php?username=${username}`)
         return response.data.result
     } catch (error) {
-        return {}
+        return false
     }
 }
 
@@ -203,7 +203,7 @@ const profileDataByTg = async (username:string) => {
         
         return response.data
     } catch (error) {
-        return {}
+        return false
     }
 }
 

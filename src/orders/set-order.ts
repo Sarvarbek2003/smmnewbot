@@ -101,6 +101,8 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 })
             } else if (partner?.info?.type === 'subscriber' && partner.info.social == 'instagram'){
                 let instadata = await profilDataByInsta(action.feild?.nomask)
+                console.log(!instadata);
+                
                 if(!instadata){
                     bot.deleteMessage(chat_id, message.message_id)
                     await prisma.users.update({where: {chat_id}, data: { steep: ['home'] }})
