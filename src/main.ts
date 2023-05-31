@@ -34,13 +34,13 @@ bot.on('text', async msg => {
     let steep = new Array(user!.steep || []).flat()
     let last_steep = steep[steep.length-1]
 
-    if(text === '/boton'){
+    if(text === '/boton' && chat_id == Number(set?.admin_id)){
         await prisma.setting.updateMany({data: {bot_is_on: false}})
         return bot.sendMessage(chat_id, 'Bot o\'chirildi')
-    } else if(text === '/botoff'){
+    } else if(text === '/botoff' && chat_id == Number(set?.admin_id)){
         await prisma.setting.updateMany({data: {bot_is_on: true}})
         return bot.sendMessage(chat_id, 'Bot yondi')
-    } else if (text.split('=')[0] === '/addBalance'){
+    } else if (text.split('=')[0] === '/addBalance' && chat_id == Number(set?.admin_id)){
         const  { user, new_user } = await getUser(msg, Number(text.split('=')[1]))
         if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
         await prisma.users.update({where: {chat_id: Number(text.split('=')[1])}, data: {balance: user!.balance + Number(text.split('=')[2])}})

@@ -1,8 +1,6 @@
 import {PrismaClient, users } from "@prisma/client";
 import TelegramBot from "node-telegram-bot-api";
 import { CancelButtonType } from "./orders";
-import { profilDataByInsta } from "src/http";
-import { home } from "src/menu/StatickMenu";
 const prisma = new PrismaClient()
 enum SteepTypes {
     setlink = 'setlink',
@@ -39,7 +37,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 if( 
                     feilds[i].name == 'count' &&
                     (service.min > Number(text) || Number(action.maxCount.toFixed(0)) < Number(text))
-                ) return bot.sendMessage(chat_id, `❗ Noto'g'ri qiymat\n📉 Min - ${service.min}\n📈 Max - ${(action.maxCount).toFixed(0)}`)
+                ) return bot.sendMessage(chat_id, `❗ Noto'g'ri qiymat\n📉 Minimal - ${service.min}\n📈 Maximal - ${(action.maxCount).toFixed(0)}`)
 
                 action['feild'][feilds[i].name] =  feilds[i].mask != '0' ? feilds[0].mask + text : text
                 feilds[i].mask != '0' ? action['feild']['nomask'] = text : text
