@@ -20,7 +20,6 @@ let settingCache: setting | null
 
 bot.on('message', msg => console.log(msg))
 
-
 bot.on('text', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
     const text:string = msg.text!
@@ -34,21 +33,34 @@ bot.on('text', async msg => {
     let steep = new Array(user!.steep || []).flat()
     let last_steep = steep[steep.length-1]
 
-    if(text === '/boton' && chat_id == Number(set?.admin_id)){
+    if(text === '/botoff' && chat_id == Number(set?.admin_id)){
         await prisma.setting.updateMany({data: {bot_is_on: false}})
         return bot.sendMessage(chat_id, 'Bot o\'chirildi')
-    } else if(text === '/botoff' && chat_id == Number(set?.admin_id)){
+    } else if(text === '/boton' && chat_id == Number(set?.admin_id)){
         await prisma.setting.updateMany({data: {bot_is_on: true}})
         return bot.sendMessage(chat_id, 'Bot yondi')
     } else if (text.split('=')[0] === '/addBalance' && chat_id == Number(set?.admin_id)){
+        if (!text.split('=')[1]) return
         const  { user, new_user } = await getUser(msg, Number(text.split('=')[1]))
         if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
         await prisma.users.update({where: {chat_id: Number(text.split('=')[1])}, data: {balance: user!.balance + Number(text.split('=')[2])}})
         bot.sendMessage(text.split('=')[1], `<b>Sizning balansingiz admin tomonidan ${text.split("=")[2]} so'mga to'ldirildi</b>`, {parse_mode:'HTML'})
         return bot.sendMessage(chat_id, `<a href="tg://user?id=${text.split('=')[1]}">Foydalanuvchi</a> balansi ${text.split('=')[2]} so'mga to'ldirildi`, {parse_mode:'HTML'})
+    } else if (text.split('=')[0] == 'info' && chat_id == Number(set?.admin_id)){
+        if (!text.split('=')[1]) return
+        const  { user, new_user } = await getUser(undefined, Number(text.split('=')[1]))
+        if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
+        let txt = `*👤 Name:* ${user.full_name}\n*✍️ Username:* ${user?.username ? user?.username : 'yoq'}\n*🆔 Id:* ${user.id}\n*💵 Balance:* ${user.balance} so'm\n*👥 Group parner:* ${user.group_partners}\n*👥 Partner:* ${user.partners}\n*🚫 Is block:* ${user.is_block}`
+        return bot.sendMessage(chat_id, txt, {parse_mode: 'Markdown'})
+    } else if (text.split('=')[0] == 'block' && chat_id == Number(set?.admin_id)){
+        if (!text.split('=')[1]) return
+        const  { user, new_user } = await getUser(undefined, Number(text.split('=')[1]))
+        if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
+        let updated = await prisma.users.update({where: {chat_id: Number(text.split('=')[1])}, data: {is_block: !user?.is_block}})
+        return bot.sendMessage(chat_id, `<a href="tg://user?id=${text.split('=')[1]}">Foydalanuvchi</a> ${updated.is_block ? 'blocklandi': 'blockdan chiqarildi'}`, {parse_mode:'HTML'})
     }
-
-
+    
+    if(user?.is_block) return 
     if(set?.bot_is_on === false && chat_id != Number(set?.admin_id)) return bot.sendMessage(chat_id, "⚙️ Botda texnik ishlar olib borilmoqda")
     if(is_member === false){
         await prisma.users.delete({where:{chat_id}})
@@ -156,9 +168,9 @@ bot.on('callback_query', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
     const callbacData:string = msg.data!
     const  { user, new_user } = await getUser(msg)
+    if(user?.is_block) return
     let { is_member } = await getChatMember(bot, msg)
     let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
-
     let action:any = new Object(user!.action)
     let data = callbacData.split('=')[1]
     let request_id = callbacData.split('=')[0]
@@ -295,29 +307,33 @@ let checkOrders = async() => {
         return bot.sendMessage(Number(order.chat_id), text, {parse_mode: 'HTML'})
     }
 }
-
+let gt_username = '@tesuchungruppa'
+let grCount:number
 const cacheModule = async ()=> {
     let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
+    let groupMemberCount = await bot.getChatMemberCount(gt_username)
     settingCache = set
+    grCount =  groupMemberCount
 }
 cacheModule()
 
 let newChatMembersCache:any = {}
-
 bot.on('new_chat_members', async msg=> {         
     let from_chat = msg.from!.id
     if(msg.chat.id.toString() != '-1001593191951') return
     await getUser(msg)
-    
     let new_chat_members = msg.new_chat_members!
     for (let i = 0; i < new_chat_members!.length; i++) {
+        let groupMemberCount = await bot.getChatMemberCount(gt_username)
+        console.log(`groupMemberCount1 ${groupMemberCount}, grGlobalCount1 ${grCount}`);
         if(from_chat == new_chat_members[i]!.id)  return 
-        console.log(newChatMembersCache[from_chat], newChatMembersCache[from_chat] == true);
         if (newChatMembersCache[from_chat]) {
-            newChatMembersCache[from_chat].summa = newChatMembersCache[from_chat].summa + Number(settingCache?.group_partner_sum || 10)
-            newChatMembersCache[from_chat].count = newChatMembersCache[from_chat].count + 1
+            newChatMembersCache[from_chat].summa = newChatMembersCache[from_chat].summa + (groupMemberCount > grCount ?  Number(settingCache?.group_partner_sum || 10) : 0)
+            newChatMembersCache[from_chat].count = newChatMembersCache[from_chat].count + (groupMemberCount > grCount ? 1 : 0)
+            grCount = grCount + groupMemberCount > grCount ? 1 : 0
         } else newChatMembersCache[from_chat] = {summa:Number(settingCache?.group_partner_sum || 10), count: 1}
         console.log('new_Chat_Members_Cache', newChatMembersCache);
+        console.log(`groupMemberCount2 ${groupMemberCount}, grGlobalCount2 ${grCount}`);
     }
 })
 

@@ -85,12 +85,12 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
                     if(response.data.error.replaceAll(' ','').replaceAll('.', '') === 'YouhaveactiveorderwiththislinkPleasewaituntilorderbeingcompleted'){
                         bot.sendMessage(chat_id, '⚠️ Sizda ushbu havolada faol buyurtma mavjud. Iltimos, buyurtma tugaguncha kuting.')
                     } else {
-                        bot.sendMessage(chat_id, response.data.error)
+                        bot.sendMessage(chat_id, `⚠️ Diqqat ushbu xatolikni adminga tashlang\n\n${response.data.error}`)
                     }
                 }
               })
               .catch((error) => {
-                return bot.sendMessage(chat_id, '⚠️ ' +error.message )
+                return bot.sendMessage(chat_id, '⚠️ Diqqat ushbu xatolikni adminga tashlang\n\n' +error.message )
               });
               
         } 
