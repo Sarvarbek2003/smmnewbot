@@ -21,7 +21,7 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
         let feilds:Array<{steep: number, regex: string, title:string, name:string} | any> = new Array(service?.feild || []).flat()
         
         if (action.pending_order === true && service?.type === ServiceType.default){
-            let summa = +(service.price / 1000).toFixed(2) * action.feild.count
+            let summa = +(service.price / 1000) * action.feild.count
             let data = JSON.stringify({
                 "key": KEY,
                 "action": "add",

@@ -62,7 +62,8 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
             action.procces = false
             action.back = CancelButtonType.renderOneService
             action.pending_order = true
-            action['feild']['summa'] = +(service.price / 1000).toFixed(2) * action.feild.count
+            let sum = Number(service.price / 1000) * action.feild.count
+            action['feild']['summa'] = sum
             let partner:any = await prisma.partners.findUnique({where: {id: action.service_id}})
             
             let message = await bot.sendMessage(chat_id, '⏳')
@@ -84,7 +85,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                     send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n`
                 }
                 
-                send_text += `\n💵 Summa: <b>${(+(service.price / 1000).toFixed(2) * action.feild.count).toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
+                send_text += `\n💵 Summa: <b>${sum.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                 bot.deleteMessage(chat_id, message.message_id)
                 bot.sendPhoto(chat_id, tgdata?.photo ? tgdata.photo : 'https://t.me/Tg_ItBlog/582',{
@@ -118,7 +119,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                     send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n`
                 }
                 
-                send_text += `\n💵 Summa: <b>${(+(service.price / 1000).toFixed(2) * action.feild.count).toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
+                send_text += `\n💵 Summa: <b>${sum.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                 bot.deleteMessage(chat_id, message.message_id)
                 bot.sendPhoto(chat_id, instadata.profile_pic_url,{
@@ -137,7 +138,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                     send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n`
                 }
                 
-                send_text += `\n💵 Summa: <b>${(+(service.price / 1000).toFixed(2) * action.feild.count).toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
+                send_text += `\n💵 Summa: <b>${sum.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                 bot.deleteMessage(chat_id, message.message_id)
                 bot.sendMessage(chat_id, send_text,{
