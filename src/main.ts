@@ -307,7 +307,7 @@ let checkOrders = async() => {
         return bot.sendMessage(Number(order.chat_id), text, {parse_mode: 'HTML'})
     }
 }
-let gt_username = '@tesuchungruppa'
+let gt_username = '@pro_smm_group'
 let grCount:number
 const cacheModule = async ()=> {
     let set:setting | null = await prisma.setting.findFirst({where:{id: 1}})
