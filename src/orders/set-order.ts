@@ -99,40 +99,33 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                     }
                 })
             } else if (partner?.info?.type === 'subscriber' && partner.info.social == 'instagram'){
+                console.log("nomask",action.feild?.nomask);
+                
                 let instadata = await profilDataByInsta(action.feild?.nomask)
-                console.log(!instadata);
-                instadata = true
+                console.log(instadata);
+                
+
                 if(!instadata){
                     bot.deleteMessage(chat_id, message.message_id)
                     await prisma.users.update({where: {chat_id}, data: { steep: ['home'] }})
                     return bot.sendMessage(chat_id, "❌ Bunday akkaunt topilmadi tekshirib qaytadan urinib ko'ring", {reply_markup:home})
-                } else if (instadata.is_private){
+                } else if (instadata.followers == '0'){
                     bot.deleteMessage(chat_id, message.message_id)
                     await prisma.users.update({where: {chat_id}, data: { steep: ['home'] }})
                     return bot.sendMessage(chat_id, "⚠️ Sizning akkauntingiz shaxsiy! Biz faqat ommaviy akkauntlarga xizmat ko'rsatamiz akkauntingizni ommaviy qilib qayta urinib ko'ring",  {reply_markup:home})
                 }
-                // action.start_count = instadata.edge_followed_by.count
-                // send_text += `🖋 Profil: ${instadata.full_name}\n👥 Obunachilar soni ${instadata.edge_followed_by.count} ta\n\n`+
+                action.start_count = instadata.followers
+                send_text += `👥 Obunachilar soni ${instadata.followers} ta\n\n`+
                 
                 `⛓  SERVICE: <b>${service.name}</b>\n`
                 for (const feild of feilds) {
-                    send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n`
+                    send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n` 
                 }
                 
                 send_text += `\n💵 Summa: <b>${sum.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                 bot.deleteMessage(chat_id, message.message_id)
-                return bot.sendMessage(chat_id, send_text, {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard:[
-                            [{text: '✅ Tasdiqlash', callback_data: action.request_id + '=confirm'}],
-                            [{text: '❌ Bekor qilish', callback_data: action.request_id + '=backOrder'}]
-                        ]
-                    }
-                })
-                // bot.sendPhoto(chat_id, instadata.profile_pic_url,{
-                //     caption: send_text,
+                // return bot.sendMessage(chat_id, send_text, {
                 //     parse_mode: 'HTML',
                 //     reply_markup: {
                 //         inline_keyboard:[
@@ -141,6 +134,16 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 //         ]
                 //     }
                 // })
+                return bot.sendPhoto(chat_id, instadata.profilePicture.replaceAll('\\', ''),{
+                    caption: send_text,
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard:[
+                            [{text: '✅ Tasdiqlash', callback_data: action.request_id + '=confirm'}],
+                            [{text: '❌ Bekor qilish', callback_data: action.request_id + '=backOrder'}]
+                        ]
+                    }
+                })
             } else {
                 action.start_count = 0
                 for (const feild of feilds) {

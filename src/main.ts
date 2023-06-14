@@ -18,8 +18,10 @@ import setOrder from './orders/set-order';
 import { checkStatus, checkout, createCheck, httprequest, profilDataByInsta, profileDataByTg } from './http';
 let settingCache: setting | null
 
-bot.on('message', msg => console.log(msg))
-
+profilDataByInsta('sarvarbekodilov070603', bot)
+bot.on('message',async msg => {
+    
+})
 bot.on('text', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
     const text:string = msg.text!

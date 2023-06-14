@@ -175,9 +175,25 @@ const checkStatus = async() => {
 
 const profilDataByInsta = async (username:string, bot:TelegramBot) => {
     try {
-        let response = await axios.get(`http://mahina-info.ru/index.php?username=${username}`)
-        return response.data.result
+        let response = await axios.get(`https://www.instagram.com/${username}`)
+        let followers = response.data.split(`"description":"`)[1].split(`"userInteractionCount":`)[2].split(`}]}`)[0].replaceAll('"','')
+        let profilePicture = response.data.split(`"profile_pic_url\":"`)[1].split(",")[0].replaceAll('"', '')
+        
+        return { 
+            followers,
+            profilePicture
+        }
+        
+        // if(!response.data.users.length) return false
+        // let user = response.data.users.find((user:any) => {
+        //     if(user.user.username === username) {
+        //         return user
+        //     }
+        // })
+        // return user
     } catch (error) {
+        console.log(error);
+        
         return false
     }
 }
