@@ -35,31 +35,35 @@ bot.on('text', async msg => {
     let steep = new Array(user!.steep || []).flat()
     let last_steep = steep[steep.length-1]
 
-    if(text === '/botoff' && chat_id == Number(set?.admin_id)){
-        await prisma.setting.updateMany({data: {bot_is_on: false}})
-        return bot.sendMessage(chat_id, 'Bot o\'chirildi')
-    } else if(text === '/boton' && chat_id == Number(set?.admin_id)){
-        await prisma.setting.updateMany({data: {bot_is_on: true}})
-        return bot.sendMessage(chat_id, 'Bot yondi')
-    } else if (text.split('=')[0] === '/addBalance' && chat_id == Number(set?.admin_id)){
-        if (!text.split('=')[1]) return
-        const  { user, new_user } = await getUser(msg, Number(text.split('=')[1]))
-        if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
-        await prisma.users.update({where: {chat_id: Number(text.split('=')[1])}, data: {balance: user!.balance + Number(text.split('=')[2])}})
-        bot.sendMessage(text.split('=')[1], `<b>Sizning balansingiz admin tomonidan ${text.split("=")[2]} so'mga to'ldirildi</b>`, {parse_mode:'HTML'})
-        return bot.sendMessage(chat_id, `<a href="tg://user?id=${text.split('=')[1]}">Foydalanuvchi</a> balansi ${text.split('=')[2]} so'mga to'ldirildi`, {parse_mode:'HTML'})
-    } else if (text.split('=')[0] == 'info' && chat_id == Number(set?.admin_id)){
-        if (!text.split('=')[1]) return
-        const  { user, new_user } = await getUser(undefined, Number(text.split('=')[1]))
-        if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
-        let txt = `*👤 Name:* ${user.full_name}\n*✍️ Username:* ${user?.username ? user?.username : 'yoq'}\n*🆔 Id:* ${user.id}\n*💵 Balance:* ${user.balance} so'm\n*👥 Group parner:* ${user.group_partners}\n*👥 Partner:* ${user.partners}\n*🚫 Is block:* ${user.is_block}`
-        return bot.sendMessage(chat_id, txt, {parse_mode: 'Markdown'})
-    } else if (text.split('=')[0] == 'block' && chat_id == Number(set?.admin_id)){
-        if (!text.split('=')[1]) return
-        const  { user, new_user } = await getUser(undefined, Number(text.split('=')[1]))
-        if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
-        let updated = await prisma.users.update({where: {chat_id: Number(text.split('=')[1])}, data: {is_block: !user?.is_block}})
-        return bot.sendMessage(chat_id, `<a href="tg://user?id=${text.split('=')[1]}">Foydalanuvchi</a> ${updated.is_block ? 'blocklandi': 'blockdan chiqarildi'}`, {parse_mode:'HTML'})
+    try {
+        if(text === '/botoff' && chat_id == Number(set?.admin_id)){
+            await prisma.setting.updateMany({data: {bot_is_on: false}})
+            return bot.sendMessage(chat_id, 'Bot o\'chirildi')
+        } else if(text === '/boton' && chat_id == Number(set?.admin_id)){
+            await prisma.setting.updateMany({data: {bot_is_on: true}})
+            return bot.sendMessage(chat_id, 'Bot yondi')
+        } else if (text.split('=')[0] === '/addBalance' && chat_id == Number(set?.admin_id)){
+            if (!text.split('=')[1]) return
+            const  { user, new_user } = await getUser(msg, Number(text.split('=')[1]))
+            if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
+            await prisma.users.update({where: {chat_id: Number(text.split('=')[1])}, data: {balance: user!.balance + Number(text.split('=')[2])}})
+            bot.sendMessage(text.split('=')[1], `<b>Sizning balansingiz admin tomonidan ${text.split("=")[2]} so'mga to'ldirildi</b>`, {parse_mode:'HTML'})
+            return bot.sendMessage(chat_id, `<a href="tg://user?id=${text.split('=')[1]}">Foydalanuvchi</a> balansi ${text.split('=')[2]} so'mga to'ldirildi`, {parse_mode:'HTML'})
+        } else if (text.split('=')[0] == 'info' && chat_id == Number(set?.admin_id)){
+            if (!text.split('=')[1]) return
+            const  { user, new_user } = await getUser(undefined, Number(text.split('=')[1]))
+            if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
+            let txt = `*👤 Name:* ${user.full_name}\n*✍️ Username:* ${user?.username ? user?.username : 'yoq'}\n*🆔 Id:* ${user.id}\n*💵 Balance:* ${user.balance} so'm\n*👥 Group parner:* ${user.group_partners}\n*👥 Partner:* ${user.partners}\n*🚫 Is block:* ${user.is_block}`
+            return bot.sendMessage(chat_id, txt, {parse_mode: 'Markdown'})
+        } else if (text.split('=')[0] == 'block' && chat_id == Number(set?.admin_id)){
+            if (!text.split('=')[1]) return
+            const  { user, new_user } = await getUser(undefined, Number(text.split('=')[1]))
+            if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
+            let updated = await prisma.users.update({where: {chat_id: Number(text.split('=')[1])}, data: {is_block: !user?.is_block}})
+            return bot.sendMessage(chat_id, `<a href="tg://user?id=${text.split('=')[1]}">Foydalanuvchi</a> ${updated.is_block ? 'blocklandi': 'blockdan chiqarildi'}`, {parse_mode:'HTML'})
+        }
+    } catch (error:any) {
+        return bot.sendMessage(chat_id, 'Error: '+ error.message)
     }
     
     if(user?.is_block) return 
@@ -137,30 +141,34 @@ bot.on('text', async msg => {
     } else if (steep[1] == SteepTypes.setOrder && action.feild_steep != 0){
         return await setOrder(bot, msg, user, profilDataByInsta, profileDataByTg, home)
     } else if (last_steep === SteepTypes.checkOrder){
-        if(!Number.isInteger(Number(text))) return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'}) 
-        let order = await prisma.orders.findFirst({where:{order_id: Number(text)}})
+       try {
+            if(!Number.isInteger(Number(text))) return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'}) 
+            let order = await prisma.orders.findFirst({where:{order_id: Number(text)}})
 
-        if (!order) return bot.sendMessage(chat_id, "*‼️ Bu id orqali buyurtma topilmadi*", {parse_mode:'Markdown'})
-        let order_user = (await getUser(undefined, Number(order!.chat_id))).user?.username
-        let txt = 
-        `<b>${order.status == "Completed" ? '✅' : order.status == 'Canceled' ? '❌' : '⏳'}`+
-        ` Buyurtma holati: </b>${order.status}\n\n`+
-        `<b>🚀 Servis: </b>${order.service_name}\n`+  
-        `<b>🆔 Buyurtma Id:</b> <code>${order.order_id}</code>\n`+  
-        `<b>📍 Servis Id: </b>${order.service_id}\n`+  
-        `<b>💎 Miqdor: ${order.count}</b>\n\n`+  
-        `<b>👁 Boshlang'ich miqdor:</b> ${order.start_count}\n`+  
-        `<b>🏷 Qolgan miqdor:</b> ${order.ready_count}\n`+  
-        `<b>🔗 Link:</b> ${order.link}\n`+  
-        `<b>💵 Summa:</b> ${order.price} so'm\n`+  
-        `<b>🙆‍♂️ Buyurtmachi</b> <a href="tg://user?id=${order.chat_id}">${order_user ? order_user : order.chat_id}</a>\n\n`+
-        `<b>⏰ Buyurtma sanasi:</b> ${order.created_at.toLocaleString()}\n`
+            if (!order) return bot.sendMessage(chat_id, "*‼️ Bu id orqali buyurtma topilmadi*", {parse_mode:'Markdown'})
+            let order_user = (await getUser(undefined, Number(order!.chat_id))).user?.username
+            let txt = 
+            `<b>${order.status == "Completed" ? '✅' : order.status == 'Canceled' ? '❌' : '⏳'}`+
+            ` Buyurtma holati: </b>${order.status}\n\n`+
+            `<b>🚀 Servis: </b>${order.service_name}\n`+  
+            `<b>🆔 Buyurtma Id:</b> <code>${order.order_id}</code>\n`+  
+            `<b>📍 Servis Id: </b>${order.service_id}\n`+  
+            `<b>💎 Miqdor: ${order.count}</b>\n\n`+  
+            `<b>👁 Boshlang'ich miqdor:</b> ${order.start_count}\n`+  
+            `<b>🏷 Qolgan miqdor:</b> ${order.ready_count}\n`+  
+            `<b>🔗 Link:</b> ${order.link}\n`+  
+            `<b>💵 Summa:</b> ${order.price} so'm\n`+  
+            `<b>🙆‍♂️ Buyurtmachi</b> <a href="tg://user?id=${order.chat_id}">${order_user ? order_user : order.chat_id}</a>\n\n`+
+            `<b>⏰ Buyurtma sanasi:</b> ${order.created_at.toLocaleString()}\n`
 
-        bot.sendMessage(chat_id, txt, {
-            disable_web_page_preview: true,
-            parse_mode: 'HTML',
-            reply_markup: home
-        })
+            bot.sendMessage(chat_id, txt, {
+                disable_web_page_preview: true,
+                parse_mode: 'HTML',
+                reply_markup: home
+            })
+       } catch (error) {
+            return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'})
+       }
     } 
 })
 
@@ -332,7 +340,7 @@ bot.on('new_chat_members', async msg=> {
         if (newChatMembersCache[from_chat]) {
             newChatMembersCache[from_chat].summa = newChatMembersCache[from_chat].summa + (groupMemberCount > grCount ?  Number(settingCache?.group_partner_sum || 10) : 0)
             newChatMembersCache[from_chat].count = newChatMembersCache[from_chat].count + (groupMemberCount > grCount ? 1 : 0)
-            grCount = grCount + groupMemberCount > grCount ? 1 : 0
+            if(groupMemberCount > grCount) grCount = grCount + 1
         } else newChatMembersCache[from_chat] = {summa:Number(settingCache?.group_partner_sum || 10), count: 1}
         console.log('new_Chat_Members_Cache', newChatMembersCache);
         console.log(`groupMemberCount2 ${groupMemberCount}, grGlobalCount2 ${grCount}`);
@@ -358,7 +366,7 @@ setInterval(async()=> {
 }, 5000);
 
 setInterval(async()=> {
-    checkOrders()
-    cacheModule()
-    checkStatus()
+    await checkOrders()
+    await cacheModule()
+    await checkStatus()
 },60000)
