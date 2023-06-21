@@ -70,15 +70,15 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
             if(partner?.info?.type === 'subscriber' && partner.info.social == 'telegram'){
                 let tgdata = await profileDataByTg(action.feild?.link)
                 
-                if(!tgdata || tgdata.error) {
+                if(!tgdata) {
                     bot.deleteMessage(chat_id, message.message_id)
                     await prisma.users.update({where: {chat_id}, data: { steep: ['home'] }})
                     return bot.sendMessage(chat_id, "❌ Bu nom bo'yicha kanal topilmadi", {reply_markup:home})
                 } 
 
-                action.start_count = tgdata.subscribers
+                action.start_count = tgdata.members
 
-                send_text += `🖋 Kanal nomi: ${tgdata.title.replaceAll(/<|>/g, '')}\n👥 Obunachilar soni ${tgdata.subscribers} ta\n\n`+
+                send_text += `🖋 Kanal nomi: ${tgdata.chanell_name.replaceAll(/<|>/g, '')}\n👥 Obunachilar soni ${tgdata.members} ta\n\n`+
                 `⛓  SERVICE: <b>${service.name}</b>\n`
                 
                 for (const feild of feilds) {
@@ -88,7 +88,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 send_text += `\n💵 Summa: <b>${sum.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                 bot.deleteMessage(chat_id, message.message_id)
-                bot.sendPhoto(chat_id, tgdata?.photo ? tgdata.photo : 'https://t.me/Tg_ItBlog/582',{
+                bot.sendPhoto(chat_id, tgdata?.chat_photo ? tgdata.chat_photo : 'https://t.me/Tg_ItBlog/582',{
                     caption: send_text,
                     parse_mode: 'HTML',
                     reply_markup: {

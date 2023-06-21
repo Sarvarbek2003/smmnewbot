@@ -4,7 +4,10 @@ import axios from 'axios'
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 const prisma = new PrismaClient();
+import * as dotenv from "dotenv";
+dotenv.config();
 
+const TOKEN:string = process.env.BOT_TOKEN || '';
 enum ServiceType { 
     default = 'default'
 }
@@ -205,19 +208,41 @@ const profileDataByTg = async (username:string) => {
     console.log(username);
     const options = {
         method: 'GET',
-        url: 'https://telegram92.p.rapidapi.com/api/info/channel',
-        params: {channel: username},
-        headers: {
-          'X-RapidAPI-Key': localbase['request_token'+(localbase.request_count > 1000 ? 2 : 1)],
-          'X-RapidAPI-Host': 'telegram92.p.rapidapi.com'
-        }
+        url: `https://api.telegram.org/bot${TOKEN}/getchatmemberscount?chat_id=@`+username,
+    };
+    const options2 = {
+        method: 'GET',
+        url: `https://api.telegram.org/bot${TOKEN}/getChat?chat_id=@`+username,
     };
 
     try {
+        let data = {
+            members: 0,
+            chanell_name: 'Chanell',
+            chat_photo: 'https://t.me/Tg_ItBlog/582'
+        }
         let response = await axios.request(options);
-        writeFileSync(join(process.cwd(), 'src', 'localbase.json'), JSON.stringify(localbase, null, 4))
+        let response2 = await axios.request(options2);
+        console.log('response', response.data);
+        console.log('response2', response2.data);
         
-        return response.data
+        if(response.data.ok == true) {
+            data.members = response.data.result
+        }
+        else { return false }
+        if(response2.data.ok === true) {
+            data.chanell_name = response2.data.result.title
+            if(response2.data.result?.photo){
+                let response3 = await axios.get(`https://api.telegram.org/bot${TOKEN}/getFile?file_id=`+response2.data.result?.photo.big_file_id)
+                console.log(response3.data);
+                if(response3.data.ok == true){
+                    data.chat_photo = `https://api.telegram.org/file/bot${TOKEN}/`+response3.data.result.file_path
+                }
+            }
+        } else {return false}
+        
+        console.log(data);
+        return data
     } catch (error) {
         return false
     }
