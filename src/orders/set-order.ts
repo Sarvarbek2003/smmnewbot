@@ -110,7 +110,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 setTimeout(() => {
                     let dir = tgdata.chat_photo.split('/')[0] +'/'+ tgdata.chat_photo.split('/')[1]
                     rmSync(dir, { recursive: true, force: true })
-                }, 30000);
+                }, 3000);
                 
             } else if (partner?.info?.type === 'subscriber' && partner.info.social == 'instagram'){
                 console.log("nomask",action.feild?.nomask);
