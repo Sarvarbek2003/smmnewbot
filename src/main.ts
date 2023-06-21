@@ -18,7 +18,7 @@ import setOrder from './orders/set-order';
 import { checkStatus, checkout, createCheck, httprequest, profilDataByInsta, profileDataByTg } from './http';
 let settingCache: setting | null
 
-profilDataByInsta('sarvarbekodilov070603', bot)
+// profilDataByInsta('sarvarbekodilov070603', bot)
 bot.on('message',async msg => {
     
 })

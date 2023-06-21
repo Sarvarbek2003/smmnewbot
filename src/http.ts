@@ -1,7 +1,8 @@
 import { PrismaClient, setting, users } from "@prisma/client";
 import TelegramBot from 'node-telegram-bot-api'
 import axios from 'axios'
-import { readFileSync, writeFileSync } from "fs";
+import http  from 'https'
+import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 const prisma = new PrismaClient();
 import * as dotenv from "dotenv";
@@ -238,11 +239,27 @@ const profileDataByTg = async (username:string) => {
                 if(response3.data.ok == true){
                     data.chat_photo = `https://api.telegram.org/file/bot${TOKEN}/`+response3.data.result.file_path
                 }
-            }
+            } else data.chat_photo = 'https://offical.myxvest.ru/photo.jpg'
         } else {return false}
-        
-        console.log(data);
-        return data
+        if (!existsSync('files/'+username)) {
+            mkdirSync('files/'+username,  { recursive: true })
+        }
+        const file = await createWriteStream(join(process.cwd(), 'files/'+username, 'image.jpg'));
+        let finished = await new Promise((resolve, reject) => {
+            http.get(data.chat_photo, function(response) {
+                response.pipe(file)
+                response.on('end', () => {
+                    resolve(true)
+                })
+            });
+        })
+
+        if(finished){
+            data.chat_photo = 'files/'+username+'/image.jpg'
+            console.log(data);
+            return data
+        }
+
     } catch (error) {
         return false
     }

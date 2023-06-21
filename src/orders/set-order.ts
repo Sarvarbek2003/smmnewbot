@@ -1,6 +1,14 @@
 import {PrismaClient, users } from "@prisma/client";
 import TelegramBot from "node-telegram-bot-api";
 import { CancelButtonType } from "./orders";
+import FormData from 'form-data';
+import * as dotenv from "dotenv";
+dotenv.config();
+
+const TOKEN:string = process.env.BOT_TOKEN || '';
+import axios from "axios";
+import { createReadStream, mkdirSync, readFileSync, rmSync, rmdirSync } from "fs";
+import { join } from "path";
 const prisma = new PrismaClient()
 enum SteepTypes {
     setlink = 'setlink',
@@ -69,7 +77,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
             let message = await bot.sendMessage(chat_id, '⏳')
             if(partner?.info?.type === 'subscriber' && partner.info.social == 'telegram'){
                 let tgdata = await profileDataByTg(action.feild?.link)
-                
+                console.log('tgdata',tgdata);
                 if(!tgdata) {
                     bot.deleteMessage(chat_id, message.message_id)
                     await prisma.users.update({where: {chat_id}, data: { steep: ['home'] }})
@@ -88,7 +96,8 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 send_text += `\n💵 Summa: <b>${sum.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                 bot.deleteMessage(chat_id, message.message_id)
-                bot.sendPhoto(chat_id, tgdata?.chat_photo ? tgdata.chat_photo : 'https://t.me/Tg_ItBlog/582',{
+                const stream = createReadStream(tgdata?.chat_photo);
+                bot.sendPhoto(chat_id, stream,{
                     caption: send_text,
                     parse_mode: 'HTML',
                     reply_markup: {
@@ -98,6 +107,11 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                         ]
                     }
                 })
+                setTimeout(() => {
+                    let dir = tgdata.chat_photo.split('/')[0] +'/'+ tgdata.chat_photo.split('/')[1]
+                    rmSync(dir, { recursive: true, force: true })
+                }, 30000);
+                
             } else if (partner?.info?.type === 'subscriber' && partner.info.social == 'instagram'){
                 console.log("nomask",action.feild?.nomask);
                 
@@ -168,6 +182,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
             await prisma.users.update({where: {chat_id}, data: { action }})
            
         }
+
         
     } catch (error) {
         console.log('set-order error', error)
