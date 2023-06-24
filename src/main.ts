@@ -87,7 +87,8 @@ bot.on('text', async msg => {
                 const  { user } = await getUser(undefined, partner_id)
                 if(user === undefined) return
                 let partner = user.partners + 1  
-                prisma.users.update({where:{chat_id: user?.chat_id}, data:{ partners: partner }})
+                let balance = user.balance + (set?.partner_price || 0)
+                await prisma.users.update({where:{chat_id: user?.chat_id}, data:{ partners: partner, balance: balance }})
                 bot.sendMessage(partner_id, `👤 <b>Sizning <a href="tg://user?id=${chat_id}">do'stingiz</a> botimizga a'zo bo'ldi</b>\n💰<i> Hisobingizga ${set?.partner_price} SO'M qo'shildi</i>`, {parse_mode:'HTML'})
             }
         }
