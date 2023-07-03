@@ -68,6 +68,7 @@ model services {
   feild      Json?
   info       Json?
   type       String?
+  edited     Boolean @default(false)
   service_id Int?
   partner_id Int
   refill_day Int?

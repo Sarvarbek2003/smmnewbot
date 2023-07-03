@@ -53,8 +53,8 @@ bot.on('text', async msg => {
             if (!text.split('=')[1]) return
             const  { user, new_user } = await getUser(undefined, Number(text.split('=')[1]))
             if (!user) return bot.sendMessage(chat_id, 'User topilmadi')
-            let txt = `*👤 Name:* ${user.full_name}\n*✍️ Username:* ${user?.username ? user?.username : 'yoq'}\n*🆔 Id:* ${user.id}\n*💵 Balance:* ${user.balance} so'm\n*👥 Group parner:* ${user.group_partners}\n*👥 Partner:* ${user.partners}\n*🚫 Is block:* ${user.is_block}`
-            return bot.sendMessage(chat_id, txt, {parse_mode: 'Markdown'})
+            let txt = `<b>👤 Name:</b> ${user.full_name}\n<b>✍️ Username:</b> ${user?.username ? user?.username : 'yoq'}\n<b>🆔 Id:</b> ${user.id}\n<b>💵 Balance:</b> ${user.balance} so'm\n<b>👥 Group parner:</b> ${user.group_partners}\n<b>👥 Partner:</b> ${user.partners}\n<b>🚫 Is block:</b> ${user.is_block}`
+            return bot.sendMessage(chat_id, txt, {parse_mode: 'HTML'})
         } else if (text.split('=')[0] == 'block' && chat_id == Number(set?.admin_id)){
             if (!text.split('=')[1]) return
             const  { user, new_user } = await getUser(undefined, Number(text.split('=')[1]))
