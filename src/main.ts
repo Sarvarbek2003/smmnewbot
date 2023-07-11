@@ -206,7 +206,8 @@ bot.on('callback_query', async msg => {
             return bot.sendMessage(chat_id, '*✅ To`lov muvoffaqyatli amalga oshirildi.\nHisobingiz* `'+action.popolnit_summa +'`* so\'m ga to\'ldirildi*', {parse_mode: "Markdown"})
         }
     }
-
+    console.log(msg);
+    
     if (request_id != action.request_id) return  bot.answerCallbackQuery(msg.id, { text:"❌ Ushbu tugmadan endi foydalana olmaysiz"});
     if(data === ButtonType.back){
         if(action.back == CancelButtonType.select) return 

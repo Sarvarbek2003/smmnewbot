@@ -131,7 +131,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 // action.start_count = instadata.followers
                 // send_text += `👥 Obunachilar soni ${instadata.followers} ta\n\n`+
                 
-                `⛓  SERVICE: <b>${service.name}</b>\n`
+                send_text += `⛓  SERVICE: <b>${service.name}</b>\n`
                 for (const feild of feilds) {
                     send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n` 
                 }
@@ -139,7 +139,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 send_text += `\n💵 Summa: <b>${sum.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                 `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                 bot.deleteMessage(chat_id, message.message_id)
-                return bot.sendMessage(chat_id, send_text, {
+                bot.sendMessage(chat_id, send_text, {
                     parse_mode: 'HTML',
                     reply_markup: {
                         inline_keyboard:[
@@ -159,6 +159,7 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
                 //     }
                 // })
             } else {
+                send_text += `⛓ SERVICE: <b>${service.name}</b>\n`
                 action.start_count = 0
                 for (const feild of feilds) {
                     send_text += `⛓ ${feild.name.toUpperCase()}: <b>${action.feild[feild.name]}</b>\n`

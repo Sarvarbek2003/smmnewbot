@@ -20,9 +20,13 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
         let action:any = new Object(user!.action)
         let getOneServiceData:string = msg?.data || ''
         let chat_id:TelegramBot.ChatId = Number(user?.chat_id)
-
+        console.log(action);
+        
         let service = await prisma.services.findUnique({where:{id: action.oneservice_id}})
+        console.log(service);
+        
         let feilds:Array<{steep: number, regex: string, title:string, name:string} | any> = new Array(service?.feild || []).flat()
+        console.log(feilds);
         
         if (action.pending_order === true && service?.type === ServiceType.default){
             let summa = +(service.price / 1000) * action.feild.count
@@ -43,6 +47,7 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
                 },
                 data : data
               };
+              console.log(config);
               
               axios.request(config)
               .then((response) => {
