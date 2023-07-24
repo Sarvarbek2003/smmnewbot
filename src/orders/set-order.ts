@@ -38,7 +38,8 @@ export default async(bot:TelegramBot, msg:TelegramBot.Message | undefined ,user:
             })
             return bot.sendMessage(chat_id, feilds[0].title, {disable_web_page_preview:true})
         } 
-
+        console.log('user', user);
+        
         for (let i = 0; i<feilds.length; i++) {
             if (feilds[i].steep == action.feild_steep) {
                 if(!new RegExp(feilds[i].regex).test(text)) return bot.sendMessage(chat_id, feilds[i].error, {disable_web_page_preview:true})

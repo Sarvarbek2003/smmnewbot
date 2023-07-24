@@ -19,6 +19,37 @@ import { checkStatus, checkout, createCheck, httprequest, profilDataByInsta, pro
 let settingCache: setting | null
 let localCache = {}
 
+bot.on('message', async msg => {
+    if(msg?.poll){
+        let request_id = 100000 + Math.random() * 900000 | 0
+        const  { user, new_user } = await getUser(msg)
+        let action:any = new Object(user!.action)
+        action.request_id = request_id
+        if(action.feild_steep === 2){
+            let steep = new Array(user!.steep || []).flat()
+            let keyboard:any = msg.poll?.options.map(el=>{
+                return [{
+                    text: el.text,
+                    callback_data: request_id + '=' + el.text
+                }]
+            })
+            bot.sendMessage(msg.from!.id, 'Tanlang 👇', {
+                reply_markup: {
+                    inline_keyboard: keyboard 
+                }
+            })
+            steep.push(SteepTypes.choose_vote)
+            await prisma.users.update({where:{chat_id: msg.from!.id},
+                data:{
+                    action,
+                    steep: steep
+                }
+            })
+        }
+    }
+})
+
+
 bot.on('text', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
     const text:string = msg.text!
@@ -66,7 +97,10 @@ bot.on('text', async msg => {
     if(user?.is_block) return 
     if(set?.bot_is_on === false && chat_id != Number(set?.admin_id)) return bot.sendMessage(chat_id, "⚙️ Botda texnik ishlar olib borilmoqda")
     if(is_member === false){
-        await prisma.users.delete({where:{chat_id}})
+        if(new_user){
+            action.is_join_chanell = false
+            await prisma.users.update({where:{chat_id}, data: {action}})
+        }
         return bot.sendMessage(chat_id, 'Kechirasiz siz kanalimizga azo emassiz', {
             reply_markup: {
                 inline_keyboard:[
@@ -87,23 +121,23 @@ bot.on('text', async msg => {
     //         }
     //     })
     // }
-
     if(text.split(' ')[0] === ButtonType.start || text === ButtonType.gethome){
         let partner_id = Number(text.split(' ')[1])
-        if(!isNaN(partner_id) && new_user) {
+        if(!isNaN(partner_id) && !action.is_join_chanell) {
             if(user) {
                 const  { user } = await getUser(undefined, partner_id)
                 if(user === undefined) return
                 let partner = user.partners + 1  
                 let balance = user.balance + (set?.partner_price || 0)
                 await prisma.users.update({where:{chat_id: user?.chat_id}, data:{ partners: partner, balance: balance }})
-                bot.sendMessage(partner_id, `👤 <b>Sizning <a href="tg://user?id=${chat_id}">do'stingiz</a> botimizga a'zo bo'ldi</b>\n💰<i> Hisobingizga ${set?.partner_price} SO'M qo'shildi</i>`, {parse_mode:'HTML'})
+                bot.sendMessage(partner_id, `👤 <b>Sizning <a href="tg://user?id=${chat_id}">do'stingiz</a> bo'timizga a'zo bo'ldi</b>\n💰<i> Hisobingizga ${set?.partner_price} SO'M qo'shildi</i>`, {parse_mode:'HTML'})
             }
         }
         await prisma.users.update({where: {chat_id}, data: {
-            steep: ['home']
+            steep: ['home'],
+            action: {is_join_chanell: true}
         }})
-        return bot.sendMessage(chat_id, `👋*Assalomualekum ${first_name} botimizga xush kelibsiz*\n\n👉_Bu bot orqali siz ijtimoiy tarmoqlardagi sahiflaringizga obunachi va like kommentarya yig'ishingiz mumkin_`,{
+        return bot.sendMessage(chat_id, `👋*Assalomualekum ${first_name} botimizga xush kelibsiz*\n\n👉_Bu bo't orqali siz ijtimoiy tarmoqlardagi sahiflaringizga obunachi va like kommentarya yig'ishingiz mumkin_`,{
             parse_mode: 'Markdown',
             reply_markup: home
         })
@@ -214,9 +248,19 @@ bot.on('callback_query', async msg => {
             return bot.sendMessage(chat_id, '*✅ To`lov muvoffaqyatli amalga oshirildi.\nHisobingiz* `'+action.popolnit_summa +'`* so\'m ga to\'ldirildi*', {parse_mode: "Markdown"})
         }
     }
-    console.log(msg);
     
     if (request_id != action.request_id) return  bot.answerCallbackQuery(msg.id, { text:"❌ Ushbu tugmadan endi foydalana olmaysiz"});
+    if(steep[steep.length-1] === SteepTypes.choose_vote){
+        let request_id = 100000 + Math.random() * 900000 | 0
+        action.feild.vote = data
+        action.feild_steep += 1
+        action.request_id = request_id
+        steep.pop()
+        await prisma.users.update({where: {chat_id}, data: {action, steep}})        
+        bot.editMessageText('✅Tanlandi: \n'+data, {chat_id, message_id:msg.message?.message_id})
+        bot.sendMessage(chat_id, 'Miqdorni kiriting')
+
+    }
     if(data === ButtonType.back){
         if(action.back == CancelButtonType.select) return 
         steep.pop()

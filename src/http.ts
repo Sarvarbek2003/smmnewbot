@@ -6,12 +6,11 @@ import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync }
 import { join } from "path";
 const prisma = new PrismaClient();
 import * as dotenv from "dotenv";
+import { ServiceType } from "./globalTypes";
 dotenv.config();
 
 const TOKEN:string = process.env.BOT_TOKEN || '';
-enum ServiceType { 
-    default = 'default'
-}
+
 
 const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user:users | undefined) => {
     try {
@@ -28,32 +27,44 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
         let feilds:Array<{steep: number, regex: string, title:string, name:string} | any> = new Array(service?.feild || []).flat()
         console.log(feilds);
         
-        if (action.pending_order === true && service?.type === ServiceType.default){
+        if (action.pending_order === true && service?.type){
             let summa = +(service.price / 1000) * action.feild.count
-            let data = JSON.stringify({
-                "key": KEY,
-                "action": "add",
-                "service": service.service_id,
-                "link": action.feild.link,
-                "quantity": action.feild.count
-              });
+            let data
+            if(service.type === ServiceType.default){
+                data = JSON.stringify({
+                    "key": KEY,
+                    "action": "add",
+                    "service": service.service_id,
+                    "link": action.feild.link,
+                    "quantity": action.feild.count
+                });
+            }else if(service.type === ServiceType.poll){
+                data = JSON.stringify({
+                    "key": KEY,
+                    "action": "add",
+                    "service": service.service_id,
+                    "link": action.feild.link,
+                    "quantity": action.feild.count,
+                    "answer_number": action.feild.vote
+                });
+            }
               
-              let config = {
-                method: 'post',
-                maxBodyLength: Infinity,
-                url: BASE_URL,
-                headers: { 
-                  'Content-Type': 'application/json'
-                },
-                data : data
-              };
-              console.log(config);
-              
-              axios.request(config)
-              .then((response) => {
+            let config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: BASE_URL,
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            data : data
+            };
+            console.log(config);
+            
+            axios.request(config)
+                .then((response) => {
                 bot.deleteMessage(chat_id, msg.message!.message_id)
                 console.log(response.data);
-                
+            
                 if(response.data?.order) {
                     prisma.orders.create({
                         data: {
@@ -119,7 +130,10 @@ const createCheck = async(summa:string, callback:Function) => {
         },
         data: {
             "number": "9860350102464210",
-            "amount": summa
+            "amount": summa,
+            "token": process.env.PAYME_TOKEN,
+            "login": "902060398",
+
         }
         
     };
