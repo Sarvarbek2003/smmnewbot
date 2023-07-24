@@ -48,7 +48,7 @@ const getUserByMessage = async (msg: TelegramBot.Message | TelegramBot.CallbackQ
 
 
 const getChatMember = async (bot:TelegramBot, msg:TelegramBot.Message | TelegramBot.CallbackQuery): Promise<{is_member:boolean}> => {
-    return {is_member:true}
+    // return {is_member:true}
     try {
         let set:setting | null = await prisma.setting.findFirst({where: {id: 1}})
         console.log("setting", set);

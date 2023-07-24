@@ -84,14 +84,14 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
                     gr_send += `\n💵 Summa: <b>${summa.toLocaleString('ru-RU',{ minimumIntegerDigits: 2})} so'm</b>\n`+
                     `⏰ Buyurtma vaqti: <b>${new Date().toLocaleString()}</b>`
                     bot.sendMessage(chat_id, send_text, {parse_mode:'HTML', disable_web_page_preview: true})
-                    bot.sendMessage('-1001593191951', gr_send, {parse_mode:'HTML', disable_web_page_preview: true})
+                    bot.sendMessage('-1001182204049', gr_send, {parse_mode:'HTML', disable_web_page_preview: true})
                     let userBalance:number = user!.balance - summa
                     prisma.users.update({where: {chat_id:Number(chat_id)}, data:{
                         balance: userBalance,
                         steep: ['home']
                     }}).then((el)=> console.log('userBalance', el))
                 } else if(response.data.error){
-                    if(response.data.error.replaceAll(' ','').replaceAll('.', '') === 'YouhaveactiveorderwiththislinkPleasewaituntilorderbeingcompleted'){
+                    if(response.data.error === 'neworder.error.link_duplicate'){
                         bot.sendMessage(chat_id, '⚠️ Sizda ushbu havolada faol buyurtma mavjud. Iltimos, buyurtma tugaguncha kuting.')
                     } else {
                         bot.sendMessage(chat_id, `⚠️ Diqqat ushbu xatolikni adminga tashlang\n\n${response.data.error}`)

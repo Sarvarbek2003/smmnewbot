@@ -17,11 +17,8 @@ import cobinet from "./users/user-kobinet"
 import setOrder from './orders/set-order';
 import { checkStatus, checkout, createCheck, httprequest, profilDataByInsta, profileDataByTg } from './http';
 let settingCache: setting | null
+let localCache = {}
 
-// profilDataByInsta('sarvarbekodilov070603', bot)
-bot.on('message',async msg => {
-    
-})
 bot.on('text', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
     const text:string = msg.text!
@@ -79,6 +76,17 @@ bot.on('text', async msg => {
             }
         })
     }
+
+    // if(new_user === true) {
+    //     // await prisma.users.delete({where:{chat_id}})
+    //     return bot.sendMessage(chat_id, '🤖 Bot emasligizni tasdiqlang', {
+    //         reply_markup: {
+    //             inline_keyboard:[
+    //                 [{text:"✅ Tasdiqlash", url: 'https://t.me/'+set?.bot_username +'?start='+text.split(' ')[1]}]
+    //             ]
+    //         }
+    //     })
+    // }
 
     if(text.split(' ')[0] === ButtonType.start || text === ButtonType.gethome){
         let partner_id = Number(text.split(' ')[1])
