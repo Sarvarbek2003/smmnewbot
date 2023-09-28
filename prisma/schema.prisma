@@ -21,6 +21,7 @@ model users {
   summa          Int?
   group_partners Int      @default(0)
   created_ad     DateTime
+  updated_at     DateTime @default(now()) @updatedAt
   action         Json?
   steep          Json?
 }
@@ -85,7 +86,18 @@ model orders {
   count        Int?
   ready_count  Int?
   created_at   DateTime
+  updated_at   DateTime @default(now()) @updatedAt
   service_name String?
   service_id   Int
   return       Boolean?
+}
+
+model kassa { 
+  id          Int @id @default(autoincrement())
+  cheque_id   Int 
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+  chat_id     BigInt 
+  summa       Int
+  status      String @default("process")
 }

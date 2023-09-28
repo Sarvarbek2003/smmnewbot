@@ -1,3 +1,4 @@
+import TelegramBot from "node-telegram-bot-api"
 enum ButtonType {
     back =  'back',
     cancel = 'cancel',
@@ -8,7 +9,7 @@ enum ButtonType {
     confirm = 'confirm',
     check = 'check',
     add_partner = 'add_partner',
-    
+    paynet = 'paynet',
     gethome = '🏠 Asosiy menu',
     start = '/start'
 }
@@ -21,7 +22,8 @@ enum SteepTypes {
     cobinet = 'cobinet',
     checkOrder = 'checkOrder',
     back = 'back',
-    getservices = "getservices"
+    getservices = "getservices",
+    paynet = "paynet"
 }
 
 enum ServiceType { 
@@ -34,4 +36,11 @@ class ActionType {
     parner_id: number | undefined
     static back: any
 }
-export {ButtonType, SteepTypes, ActionType, ServiceType}
+
+class TelegramBtn {
+    home:TelegramBot.ReplyKeyboardMarkup | undefined
+    back :TelegramBot.ReplyKeyboardMarkup | undefined
+    cancel: TelegramBot.ReplyKeyboardMarkup | undefined
+}
+
+export {ButtonType, SteepTypes, ActionType, ServiceType, TelegramBtn}

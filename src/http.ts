@@ -2,7 +2,7 @@ import { PrismaClient, setting, users } from "@prisma/client";
 import TelegramBot from 'node-telegram-bot-api'
 import axios from 'axios'
 import http  from 'https'
-import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { createWriteStream, existsSync, mkdirSync, readFileSync, stat, writeFileSync } from "fs";
 import { join } from "path";
 const prisma = new PrismaClient();
 import * as dotenv from "dotenv";
@@ -124,16 +124,17 @@ const httprequest = async (bot:TelegramBot, msg: TelegramBot.CallbackQuery, user
 const createCheck = async(summa:string, callback:Function) => {
     let options = {
         method: 'POST',
-        url: process.env.PAYME_URL + '/p2p/create',
+        url: process.env.PAYME_URL,
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'token': '78886ec3-24fa-4da2-8c78-62509c1e25a2'
         },
         data: {
-            "number": "9860350102464210",
-            "amount": summa,
-            "token": process.env.PAYME_TOKEN,
-            "login": "902060398",
-
+            "method": "cheque.create2Card",
+            "params": {
+                "card_number": "9860350102464210",
+                "amount": Number(summa) * 100
+            }
         }
         
     };
@@ -145,21 +146,72 @@ const createCheck = async(summa:string, callback:Function) => {
    
 }
 
-const checkout = async(paymentid:string) => {
+const chequeVerify = async(cheque_id:string, card:string, expire:string) => {
+    try {
+        expire = expire.substring(2) + expire.substring(0,2)
+        let options = {
+            method: 'POST',
+            url: process.env.PAYME_URL,
+            headers: {
+                'Content-Type': 'application/json',
+                'token': '78886ec3-24fa-4da2-8c78-62509c1e25a2'
+            },
+            data: {
+                "method": "cheque.verify",
+                "params": {
+                    cheque_id,
+                    card, 
+                    expire
+                }
+            }
+        };
+        console.log(options);
+        
+        let res = await axios.request(options)
+        return res.data
+    } catch (err:any) {
+        return {
+            success: false,
+            result: {
+              status: 'error',
+              cheque: cheque_id,
+              error: err.message
+            }
+        }   
+    }
+}
+
+const pay = async (cheque_id:number, smsCode: string): Promise<{
+    status: number; success: boolean; result: {
+        "otp": boolean;
+        "status": string;
+    };
+}> => {
     try {
         let options = {
-            method: 'GET',
-            url: process.env.PAYME_URL + `/checkout/${paymentid}`,
+            method: 'POST',
+            url: process.env.PAYME_URL,
+            headers: {
+                'Content-Type': 'application/json',
+                'token': '78886ec3-24fa-4da2-8c78-62509c1e25a2'
+            },
+            data: {
+                "method": "cheque.pay",
+                "params": {
+                    "cheque_id": cheque_id,
+                    "sms_code": smsCode
+                }
+            }
         };
         let res = await axios.request(options)
         return res.data
     } catch (err:any) {
         return {
             success: true,
+            status: 400,
             result: {
               status: 'error',
-              cheque: 'https://payme.uz/checkout/'+paymentid,
-              error: err.message
+              otp: false,
             }
         }   
     }
@@ -172,7 +224,8 @@ const checkStatus = async() => {
             method: 'POST',
             url: process.env.SERVICE_URL,
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'token': '01d84f11-b067-4958-b0b2-ecd39b05d13f'
             },
             data: {
                 "key": process.env.SERVICE_KEY,
@@ -189,6 +242,52 @@ const checkStatus = async() => {
                 status:response.status,
                 ready_count: Number(response.remains)
             }})
+        } catch (error) {
+            console.log('checkStatus', error);
+        }
+        
+    }
+}
+
+const checkStatusPayment = async(bot: TelegramBot) => {
+    let orders = await prisma.kassa.findMany({where:{status: {in:['process']}}})
+    for (const order of orders) {
+        let options = {
+            method: 'POST',
+            url: process.env.PAYME_URL,
+            headers: {
+                'Content-Type': 'application/json',
+                'token': '78886ec3-24fa-4da2-8c78-62509c1e25a2'
+            },
+            data: {
+                "method": "cheque.get",
+                "params": {
+                    "cheque_id": order.cheque_id
+                }
+            }
+            
+        };
+        try {
+            let response:any = await axios.request(options)
+            response = response.data
+            if(response.success) {
+                let status = response.result.status
+                await prisma.kassa.update({where: {id: order.id}, data: {
+                    status:status,
+                }})
+                let user = await prisma.users.findUnique({where: {chat_id: order.chat_id}})
+                if ( status == 'success' ) {
+                    let balance = Number(user?.balance  || 0) + order.summa
+                    await prisma.users.update({where: {chat_id: order.chat_id}, data: {balance}})
+                    let txt = `💸 <b>To'lov\n➕ ${order.summa.toLocaleString('ru-RU', { minimumIntegerDigits: 2})} UZS\n💳 ***${user?.card_num?.substring(12)}\n🕓 ${new Date().toLocaleString()}\n💵 ${balance.toLocaleString('ru-RU', { minimumIntegerDigits: 2})}\n\n</b> #xabarnoma`
+                    bot.sendMessage('1228852253', txt + '\nID: <a href="tg://user?id='+order.chat_id+'">'+order.chat_id+'</a>',  {parse_mode: 'HTML'})  
+                    bot.sendMessage(Number(order.chat_id), txt, {parse_mode: 'HTML'})   
+                } else if ( status == 'cancel' ) {
+                    let txt = `❌<b> To'lov bekor qilindi\n➖ ${order.summa.toLocaleString('ru-RU', { minimumIntegerDigits: 2})} UZS\n💳 ***${user?.card_num?.substring(12)}\n🕓 ${new Date().toLocaleString()}\n💵 ${user?.balance.toLocaleString('ru-RU', { minimumIntegerDigits: 2})}\n\n</b> #xabarnoma`
+                    bot.sendMessage(Number(order.chat_id), txt,  {parse_mode: 'HTML'})   
+                    bot.sendMessage('1228852253', txt + '\nID: <a href="tg://user?id='+order.chat_id+'">'+order.chat_id+'</a>',  {parse_mode: 'HTML'})   
+                }
+            }
         } catch (error) {
             console.log('checkStatus', error);
         }
@@ -285,4 +384,4 @@ const profileDataByTg = async (username:string) => {
 }
 
 
-export { httprequest, createCheck, checkout, checkStatus, profilDataByInsta, profileDataByTg}
+export { httprequest, createCheck, chequeVerify, pay, checkStatus, profilDataByInsta, profileDataByTg, checkStatusPayment } 

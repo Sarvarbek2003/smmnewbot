@@ -10,12 +10,12 @@ const prisma = new PrismaClient();
 
 import { getChatMember, getUser } from './users/users';
 import setOrders, { CancelButtonType } from "./orders/orders"
-import { cancel, home } from './menu/StatickMenu';
+import { cancel, home, back } from './menu/StatickMenu';
 import { getOneService, rederCategoryKeyboard, renderCobinetButton, renderPartnerKeyboard, renderServices, StatusTypes } from './menu/DinamickMenu';
 import { ButtonType, SteepTypes } from './globalTypes';
 import cobinet from "./users/user-kobinet"
 import setOrder from './orders/set-order';
-import { checkStatus, checkout, createCheck, httprequest, profilDataByInsta, profileDataByTg } from './http';
+import { checkStatus, chequeVerify, pay, createCheck, httprequest, profilDataByInsta, profileDataByTg, checkStatusPayment } from './http';
 let settingCache: setting | null
 let localCache = {}
 
@@ -48,7 +48,6 @@ bot.on('message', async msg => {
         }
     }
 })
-
 
 bot.on('text', async msg => {
     const chat_id:TelegramBot.ChatId = msg.from!.id
@@ -121,6 +120,12 @@ bot.on('text', async msg => {
     //         }
     //     })
     // }
+    if(text == '❌ Bekor qilish') {
+        steep = ['home']
+        await prisma.users.update({where: {chat_id}, data: {steep}})
+        return bot.sendMessage(chat_id, "🏠 Bosh sahifa", {reply_markup: home})
+    } 
+
     if(text.split(' ')[0] === ButtonType.start || text === ButtonType.gethome){
         let partner_id = Number(text.split(' ')[1])
         if(!isNaN(partner_id) && !action.is_join_chanell) {
@@ -180,7 +185,7 @@ bot.on('text', async msg => {
             steep: ['home', SteepTypes.cobinet],
             action
         }}), user!.steep = ['home', SteepTypes.cobinet]; steep = ['home', SteepTypes.cobinet]; last_steep = steep[steep.length-1]
-        return await cobinet(bot, msg, user, renderCobinetButton, createCheck)
+        return await cobinet(bot, msg, user, renderCobinetButton, createCheck, chequeVerify, pay, {home, cancel, back})
     } else if (steep[1] == SteepTypes.setOrder && action.feild_steep != 0){
         return await setOrder(bot, msg, user, profilDataByInsta, profileDataByTg, home)
     } else if (last_steep === SteepTypes.checkOrder){
@@ -212,7 +217,9 @@ bot.on('text', async msg => {
        } catch (error) {
             return bot.sendMessage(chat_id, "*❌ Buyurtma idsi no'tog'ri*", {parse_mode:'Markdown'})
        }
-    } 
+    } else if (last_steep === SteepTypes.write_summa) {
+
+    }
 })
 
 let queryDb:any = {}
@@ -238,17 +245,6 @@ bot.on('callback_query', async msg => {
         request_time: new Date().getTime()
     }
     
-    if (data.split('-')[0] === ButtonType.check){
-        let check = await checkout(data.split('-')[1])
-        if(check.result.status == 'Not paid') return bot.answerCallbackQuery(msg.id ,{text: "❌ To'lov amalga oshirlimagan", show_alert:true})
-        else if(check.result.status == 'error') return bot.answerCallbackQuery(msg.id ,{text: `❌ Tizimda hatolik yuz berdi ushbu xatolikni adminga yuboring\nERR: ${check.result.error}`, show_alert:true})
-        else if(check.result.status == 'Payment successful') {
-            bot.deleteMessage(chat_id, msg.message!.message_id)
-            await prisma.users.update({where: {chat_id}, data:{balance: user!.balance + Number(action.popolnit_summa)}})
-            return bot.sendMessage(chat_id, '*✅ To`lov muvoffaqyatli amalga oshirildi.\nHisobingiz* `'+action.popolnit_summa +'`* so\'m ga to\'ldirildi*', {parse_mode: "Markdown"})
-        }
-    }
-    
     if (request_id != action.request_id) return  bot.answerCallbackQuery(msg.id, { text:"❌ Ushbu tugmadan endi foydalana olmaysiz"});
     if(steep[steep.length-1] === SteepTypes.choose_vote){
         let request_id = 100000 + Math.random() * 900000 | 0
@@ -272,7 +268,7 @@ bot.on('callback_query', async msg => {
         return bot.answerCallbackQuery(msg.id, { text:"Bu xizmatga buyurtma qilish uchun xisobingizda mablag` yetmaydi", show_alert: true});
     } else if (data === ButtonType.confirm){
         return await httprequest(bot, msg, user)
-    } else if (data === ButtonType.payme){
+    } else if (data === ButtonType.paynet){
         steep.push(SteepTypes.write_summa)
         action.request_id = 100000 + Math.random() * 900000 | 0
         await prisma.users.update({where: {chat_id}, data: {
@@ -423,4 +419,6 @@ setInterval(async()=> {
     await checkOrders()
     await cacheModule()
     await checkStatus()
-},60000)
+    await checkStatusPayment(bot)
+},10000)
+
